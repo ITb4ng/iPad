@@ -11,6 +11,16 @@ const SEARCH_CONFIG = Object.freeze({
   focusDelay: 280
 })
 
+const APPLE_BASE_URL = 'https://www.apple.com/kr'
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(', ')
+
 const HERO_COPY = Object.freeze({
   words: ['쓰다.', '그리다.', '빠져들다.'],
   subhead: '전면적으로 즐거운 iPad.',
@@ -53,6 +63,65 @@ const rootEl = document.documentElement
 
 const isMobileViewport = () => window.innerWidth <= BREAKPOINTS.mobile
 
+const isFocusableElementVisible = (element) => {
+  if (!(element instanceof HTMLElement)) {
+    return false
+  }
+
+  if (element.hidden || element.closest('[hidden]')) {
+    return false
+  }
+
+  const style = window.getComputedStyle(element)
+
+  if (style.display === 'none' || style.visibility === 'hidden') {
+    return false
+  }
+
+  return element.getClientRects().length > 0
+}
+
+const getNextFocusableElement = (currentElement) => {
+  if (!currentElement) {
+    return null
+  }
+
+  const focusableEls = [...document.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
+    isFocusableElementVisible
+  )
+  const currentIndex = focusableEls.indexOf(currentElement)
+
+  if (currentIndex < 0) {
+    return null
+  }
+
+  return focusableEls[currentIndex + 1] ?? null
+}
+
+const toAbsoluteAppleUrl = (url) => {
+  if (!url) {
+    return '#'
+  }
+
+  if (/^https?:\/\//.test(url)) {
+    return url
+  }
+
+  return `${APPLE_BASE_URL}${url}`
+}
+
+const setExpandedState = (element, isExpanded) => {
+  if (element) {
+    element.setAttribute('aria-expanded', String(isExpanded))
+  }
+}
+
+const setHiddenState = (element, isHidden) => {
+  if (element) {
+    element.setAttribute('aria-hidden', String(isHidden))
+  }
+}
+
 const setText = (element, value) => {
   if (element) {
     element.textContent = value
@@ -88,23 +157,121 @@ const initHeaderAndNavigation = () => {
     return
   }
 
-  const basketStarterEl = headerEl.querySelector('.basket-starter')
-  const basketEl = basketStarterEl?.querySelector('.basket')
+  const basketStarterEl = headerEl.querySelector('.basket-starter > button')
+  const basketEl = headerEl.querySelector('.basket-starter .basket')
+  const basketWrapEl = basketStarterEl?.closest('.basket-starter')
+  const basketMenuLinkEls = basketEl ? [...basketEl.querySelectorAll('a')] : []
   const headerMenuEls = [...headerEl.querySelectorAll('ul.menu > li')]
   const searchWrapEl = headerEl.querySelector('.search-wrap')
-  const searchStarterEl = headerEl.querySelector('.search-starter')
+  const searchStarterEl = headerEl.querySelector('.search-starter > button')
   const searchCloserEl = searchWrapEl?.querySelector('.search-closer')
   const searchShadowEl = searchWrapEl?.querySelector('.shadow')
   const searchInputEl = searchWrapEl?.querySelector('input')
   const searchDelayEls = searchWrapEl ? [...searchWrapEl.querySelectorAll('li')] : []
-  const menuStarterEl = headerEl.querySelector('.menu-starter')
+  const searchQuickLinkEls = searchWrapEl
+    ? [...searchWrapEl.querySelectorAll('.autocompletes a')]
+    : []
+  const menuStarterEl = headerEl.querySelector('.menu-starter > button')
   const searchTextFieldEl = headerEl.querySelector('.textfield')
   const searchCancelEl = headerEl.querySelector('.search-canceler')
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
+  const navMenuEl = navEl.querySelector('#product-nav-menu')
 
   let scrollLockY = 0
   let searchFocusTimeoutId = 0
+  let basketOpenMode = null
+  let searchOpenMode = null
+
+  /* ==========================================================================
+     Search focus modality state
+     - 최근 입력 수단이 키보드인지, 마우스/터치인지 추적
+     - 키보드로 검색창에 진입했을 때만 .is-keyboard-focus 클래스 부여
+     ========================================================================== */
+  let isKeyboardInteraction = false
+
+  const setKeyboardInteraction = () => {
+    isKeyboardInteraction = true
+  }
+
+  const clearKeyboardInteraction = () => {
+    isKeyboardInteraction = false
+  }
+
+  const applySearchKeyboardFocusState = () => {
+    if (!searchTextFieldEl || !searchInputEl) {
+      return
+    }
+
+    const isSearchInputFocused = document.activeElement === searchInputEl
+
+    searchTextFieldEl.classList.toggle(
+      'is-keyboard-focus',
+      isSearchInputFocused && isKeyboardInteraction
+    )
+  }
+
+  const clearSearchKeyboardFocusState = () => {
+    searchTextFieldEl?.classList.remove('is-keyboard-focus')
+  }
+
+  const focusSearchInput = () => {
+    if (!searchInputEl) {
+      return
+    }
+
+    searchInputEl.focus()
+    applySearchKeyboardFocusState()
+  }
+
+  const setSearchOpenMode = (mode = null) => {
+    searchOpenMode = mode
+  }
+
+  const setBasketOpenMode = (mode = null) => {
+    basketOpenMode = mode
+  }
+
+  const isKeyboardBasketSession = () =>
+    basketOpenMode === 'keyboard' && basketEl?.classList.contains('show')
+
+  const isKeyboardSearchSession = () =>
+    searchOpenMode === 'keyboard' && headerEl.classList.contains('searching')
+
+  const isPointerSearchSession = () =>
+    searchOpenMode === 'pointer' && headerEl.classList.contains('searching')
+
+  const syncInteractiveStates = () => {
+    const isBasketOpen = basketEl?.classList.contains('show') ?? false
+    const isSearchOpen = headerEl.classList.contains('searching')
+    const isHeaderMenuOpen = headerEl.classList.contains('menuing')
+    const isNavMenuOpen = navEl.classList.contains('menuing')
+    const isSearchPanelVisible = isSearchOpen || (isMobileViewport() && isHeaderMenuOpen)
+
+    setExpandedState(basketStarterEl, isBasketOpen)
+    setExpandedState(searchStarterEl, isSearchOpen)
+    setExpandedState(menuStarterEl, isHeaderMenuOpen)
+    setExpandedState(navMenuToggleEl, isNavMenuOpen)
+    setHiddenState(basketEl, !isBasketOpen)
+    setHiddenState(searchWrapEl, !isSearchPanelVisible)
+    setHiddenState(navMenuEl, isMobileViewport() ? !isNavMenuOpen : false)
+
+    if (basketStarterEl) {
+      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
+    }
+
+    if (searchStarterEl) {
+      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
+    }
+
+    if (menuStarterEl) {
+      menuStarterEl.setAttribute('aria-label', isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기')
+    }
+
+    if (navMenuToggleEl) {
+      navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
+    }
+  }
 
   const clearSearchFocusTimer = () => {
     if (!searchFocusTimeoutId) {
@@ -144,26 +311,34 @@ const initHeaderAndNavigation = () => {
       (isMobileViewport() && navEl.classList.contains('menuing'))
 
     shouldLock ? lockScroll() : unlockScroll()
+    syncInteractiveStates()
   }
 
   const hideBasket = () => {
     basketEl?.classList.remove('show')
+    setBasketOpenMode()
+    syncInteractiveStates()
   }
 
-  const showBasket = () => {
+  const showBasket = ({ mode = 'pointer' } = {}) => {
     hideSearch()
     hideNavMenu()
     closeHeaderMenu()
     closeMobileSearch()
     basketEl?.classList.add('show')
+    setBasketOpenMode(mode)
+    syncInteractiveStates()
   }
 
   const closeHeaderMenu = () => {
     headerEl.classList.remove('menuing')
+    syncInteractiveStates()
   }
 
   const closeMobileSearch = () => {
     headerEl.classList.remove('searching--mobile')
+    clearSearchKeyboardFocusState()
+    syncInteractiveStates()
   }
 
   const hideNavMenu = () => {
@@ -181,6 +356,8 @@ const initHeaderAndNavigation = () => {
       searchInputEl.value = ''
     }
 
+    clearSearchKeyboardFocusState()
+    setSearchOpenMode()
     syncScrollLock()
   }
 
@@ -198,7 +375,7 @@ const initHeaderAndNavigation = () => {
     hideSearch()
   }
 
-  const showSearch = () => {
+  const showSearch = ({ mode = 'pointer' } = {}) => {
     if (!searchInputEl) {
       return
     }
@@ -210,11 +387,13 @@ const initHeaderAndNavigation = () => {
     headerEl.classList.add('searching')
     setTransitionDelays(headerMenuEls, { reverse: true })
     setTransitionDelays(searchDelayEls)
+    setSearchOpenMode(mode)
     syncScrollLock()
     clearSearchFocusTimer()
+    clearSearchKeyboardFocusState()
 
     searchFocusTimeoutId = window.setTimeout(() => {
-      searchInputEl.focus()
+      focusSearchInput()
     }, SEARCH_CONFIG.focusDelay)
   }
 
@@ -255,21 +434,122 @@ const initHeaderAndNavigation = () => {
     hideNavMenu()
     headerEl.classList.add('menuing', 'searching--mobile')
     syncScrollLock()
-    searchInputEl.focus()
+    clearSearchKeyboardFocusState()
+    focusSearchInput()
   }
+
+  const handleSearchWrapFocusOut = (event) => {
+    if (!isKeyboardSearchSession()) {
+      return
+    }
+
+    const nextFocusedElement = event.relatedTarget
+
+    if (nextFocusedElement && searchWrapEl?.contains(nextFocusedElement)) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      if (searchWrapEl?.contains(document.activeElement)) {
+        return
+      }
+
+      hideSearch()
+    })
+  }
+
+  const handleSearchScrollClose = () => {
+    if (!isPointerSearchSession()) {
+      return
+    }
+
+    hideSearch()
+  }
+
+  const handleBasketWrapFocusOut = (event) => {
+    if (!isKeyboardBasketSession()) {
+      return
+    }
+
+    const nextFocusedElement = event.relatedTarget
+
+    if (nextFocusedElement && basketWrapEl?.contains(nextFocusedElement)) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      if (basketWrapEl?.contains(document.activeElement)) {
+        return
+      }
+
+      hideBasket()
+    })
+  }
+
+  const handleBasketScrollClose = () => {
+    if (!basketEl?.classList.contains('show')) {
+      return
+    }
+
+    hideBasket()
+  }
+
+  /* 최근 입력 수단 추적
+     - Tab / Enter / Space / 방향키 등 키보드 탐색 가능성이 높은 입력이면 true
+     - 마우스/포인터/터치는 false */
+  window.addEventListener('keydown', (event) => {
+    const { key, metaKey, altKey, ctrlKey } = event
+
+    if (metaKey || altKey || ctrlKey) {
+      return
+    }
+
+    const keyboardNavigationKeys = [
+      'Tab',
+      'Enter',
+      ' ',
+      'Spacebar',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight'
+    ]
+
+    if (keyboardNavigationKeys.includes(key)) {
+      setKeyboardInteraction()
+    }
+  })
+
+  window.addEventListener('mousedown', clearKeyboardInteraction)
+  window.addEventListener('pointerdown', clearKeyboardInteraction)
+  window.addEventListener('touchstart', clearKeyboardInteraction, { passive: true })
+  window.addEventListener('scroll', handleSearchScrollClose, { passive: true })
+  window.addEventListener('scroll', handleBasketScrollClose, { passive: true })
+
+  searchInputEl?.addEventListener('focus', () => {
+    applySearchKeyboardFocusState()
+  })
+
+  searchInputEl?.addEventListener('blur', () => {
+    clearSearchKeyboardFocusState()
+  })
 
   basketStarterEl?.addEventListener('click', (event) => {
     event.stopPropagation()
-    basketEl?.classList.contains('show') ? hideBasket() : showBasket()
+    basketEl?.classList.contains('show')
+      ? hideBasket()
+      : showBasket({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
   })
 
   basketEl?.addEventListener('click', (event) => {
     event.stopPropagation()
   })
 
+  basketWrapEl?.addEventListener('focusout', handleBasketWrapFocusOut)
+
   searchStarterEl?.addEventListener('click', (event) => {
     event.stopPropagation()
-    showSearch()
+    showSearch({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
   })
 
   searchCloserEl?.addEventListener('click', (event) => {
@@ -281,8 +561,51 @@ const initHeaderAndNavigation = () => {
     event.stopPropagation()
   })
 
+  searchWrapEl?.addEventListener('focusout', handleSearchWrapFocusOut)
+
   searchShadowEl?.addEventListener('click', () => {
     hideSearch()
+  })
+
+  searchQuickLinkEls.forEach((element, index) => {
+    const isLastQuickLink = index === searchQuickLinkEls.length - 1
+
+    element.addEventListener('keydown', (event) => {
+      if (
+        !isKeyboardSearchSession() ||
+        !isLastQuickLink ||
+        event.key !== 'Tab' ||
+        event.shiftKey
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      hideSearch()
+      basketStarterEl?.focus()
+    })
+  })
+
+  basketMenuLinkEls.forEach((element, index) => {
+    const isLastBasketLink = index === basketMenuLinkEls.length - 1
+
+    element.addEventListener('keydown', (event) => {
+      if (
+        !isKeyboardBasketSession() ||
+        !isLastBasketLink ||
+        event.key !== 'Tab' ||
+        event.shiftKey
+      ) {
+        return
+      }
+
+      event.preventDefault()
+
+      const nextFocusableEl = getNextFocusableElement(element)
+
+      hideBasket()
+      nextFocusableEl?.focus()
+    })
   })
 
   menuStarterEl?.addEventListener('click', (event) => {
@@ -335,8 +658,11 @@ const initHeaderAndNavigation = () => {
       hideNavMenu()
     }
 
+    clearSearchKeyboardFocusState()
     syncScrollLock()
   })
+
+  syncInteractiveStates()
 }
 
 const initIntersectionReveal = () => {
@@ -391,24 +717,25 @@ const renderCompareSection = () => {
   itemsEl.innerHTML = ''
 
   ipads.forEach((ipad) => {
-    const itemEl = document.createElement('div')
+    const itemEl = document.createElement('article')
     const colorList = ipad.colors
-      .map((color) => `<li style="background-color: ${color};"></li>`)
+      .map((color) => `<li aria-hidden="true" style="background-color: ${color};"></li>`)
       .join('')
 
     itemEl.classList.add('item')
+    itemEl.setAttribute('role', 'listitem')
     itemEl.innerHTML = /* html */ `
       <div class="thumbnail">
         <img src="${ipad.thumbnail}" alt="${ipad.name}" />
       </div>
-      <ul class="colors">
+      <ul class="colors" aria-label="${ipad.name} 색상">
         ${colorList}
       </ul>
       <h3 class="name">${ipad.name}</h3>
       <p class="tagline">${ipad.tagline}</p>
       <p class="price">₩${ipad.price.toLocaleString('ko-KR')}&nbsp;부터</p>
-      <button class="btn">구입하기</button>
-      <a href="${ipad.url}" class="link">더 알아보기</a>
+      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="btn" aria-label="${ipad.name} 구입하기">구입하기</a>
+      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="link" aria-label="${ipad.name} 더 알아보기">더 알아보기</a>
     `
 
     itemsEl.append(itemEl)
@@ -422,13 +749,14 @@ const initFooterNavigation = () => {
   if (navigationsEl) {
     navigationsEl.innerHTML = ''
 
-    navigations.forEach((navigation) => {
+    navigations.forEach((navigation, index) => {
       const mapEl = document.createElement('div')
+      const listId = `footer-navigation-list-${index + 1}`
       const mapList = navigation.maps
         .map(
           (map) => /* html */ `
             <li>
-              <a href="${map.url}">${map.name}</a>
+              <a href="${toAbsoluteAppleUrl(map.url)}">${map.name}</a>
             </li>
           `
         )
@@ -437,10 +765,12 @@ const initFooterNavigation = () => {
       mapEl.classList.add('map')
       mapEl.innerHTML = /* html */ `
         <h3>
-          <span class="text">${navigation.title}</span>
-          <span class="icon">+</span>
+          <button type="button" class="map-toggle" aria-expanded="false" aria-controls="${listId}">
+            <span class="text">${navigation.title}</span>
+            <span class="icon" aria-hidden="true">+</span>
+          </button>
         </h3>
-        <ul>
+        <ul id="${listId}">
           ${mapList}
         </ul>
       `
@@ -454,18 +784,38 @@ const initFooterNavigation = () => {
   }
 
   const mapEls = [...document.querySelectorAll('footer .navigations .map')]
+  const syncFooterNavigationState = () => {
+    const isMobileFooter = isMobileViewport()
+
+    mapEls.forEach((element) => {
+      const toggleEl = element.querySelector('.map-toggle')
+      const listEl = element.querySelector('ul')
+      const isExpanded = isMobileFooter ? element.classList.contains('active') : true
+
+      element.classList.toggle('active', isMobileFooter && isExpanded)
+      setExpandedState(toggleEl, isExpanded)
+
+      if (listEl) {
+        listEl.hidden = !isExpanded
+      }
+    })
+  }
 
   mapEls.forEach((element) => {
-    const headingEl = element.querySelector('h3')
+    const headingEl = element.querySelector('.map-toggle')
 
     headingEl?.addEventListener('click', () => {
-      if (window.innerWidth > 1000) {
+      if (!isMobileViewport()) {
         return
       }
 
       element.classList.toggle('active')
+      syncFooterNavigationState()
     })
   })
+
+  window.addEventListener('resize', syncFooterNavigationState)
+  syncFooterNavigationState()
 }
 
 const initHeroIntro = () => {
