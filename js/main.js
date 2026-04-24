@@ -6,9 +6,18 @@ const BREAKPOINTS = Object.freeze({
   heroMobile: 734
 })
 
+const VIEWPORT_EDGE_THRESHOLD = 2
+
 const SEARCH_CONFIG = Object.freeze({
   staggerDuration: 0.4,
   focusDelay: 280
+})
+
+const HEADER_REVEAL_CONFIG = Object.freeze({
+  activationOffset: 80,
+  hideThreshold: 96,
+  revealThreshold: 160,
+  transitionDuration: 360
 })
 
 const APPLE_BASE_URL = 'https://www.apple.com/kr'
@@ -62,6 +71,39 @@ const HERO_STATE_CLASSES = [
 const rootEl = document.documentElement
 
 const isMobileViewport = () => window.innerWidth <= BREAKPOINTS.mobile
+
+let stableBrowserTopOffset = 0
+let hasStableBrowserTopOffset = false
+
+const getBrowserTopOffset = () => Math.round(Math.max(window.visualViewport?.offsetTop ?? 0, 0))
+
+const getViewportHeight = () => window.visualViewport?.height ?? window.innerHeight
+
+const getWindowScrollY = () => Math.max(window.scrollY || window.pageYOffset || 0, 0)
+
+const getDocumentScrollHeight = () =>
+  Math.max(
+    rootEl.scrollHeight,
+    rootEl.offsetHeight,
+    document.body?.scrollHeight ?? 0,
+    document.body?.offsetHeight ?? 0
+  )
+
+const isNearDocumentBottom = () =>
+  getDocumentScrollHeight() - (getWindowScrollY() + getViewportHeight()) <= VIEWPORT_EDGE_THRESHOLD
+
+const syncBrowserTopOffset = () => {
+  const nextOffset = getBrowserTopOffset()
+
+  if (isMobileViewport() && isNearDocumentBottom() && hasStableBrowserTopOffset) {
+    rootEl.style.setProperty('--browser-top-offset', `${stableBrowserTopOffset}px`)
+    return
+  }
+
+  stableBrowserTopOffset = nextOffset
+  hasStableBrowserTopOffset = true
+  rootEl.style.setProperty('--browser-top-offset', `${stableBrowserTopOffset}px`)
+}
 
 const isFocusableElementVisible = (element) => {
   if (!(element instanceof HTMLElement)) {
@@ -182,6 +224,12 @@ const initHeaderAndNavigation = () => {
   let searchFocusTimeoutId = 0
   let basketOpenMode = null
   let searchOpenMode = null
+  let lastScrollY = window.scrollY || window.pageYOffset || 0
+  let pendingScrollDelta = 0
+  let isHeaderRevealTicking = false
+  let isHeaderVisible = true
+  let lastScrollDirection = 0
+  let scrollIdleTimeoutId = 0
 
   /* ==========================================================================
      Search focus modality state
@@ -241,6 +289,161 @@ const initHeaderAndNavigation = () => {
   const isPointerSearchSession = () =>
     searchOpenMode === 'pointer' && headerEl.classList.contains('searching')
 
+  const getScrollY = () => Math.max(window.scrollY || window.pageYOffset || 0, 0)
+
+  const clearScrollIdleTimer = () => {
+    if (!scrollIdleTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(scrollIdleTimeoutId)
+    scrollIdleTimeoutId = 0
+  }
+
+  const queueScrollIdleReset = () => {
+    clearScrollIdleTimer()
+    scrollIdleTimeoutId = window.setTimeout(() => {
+      pendingScrollDelta = 0
+      lastScrollDirection = 0
+      scrollIdleTimeoutId = 0
+    }, 120)
+  }
+
+  const isHeaderOverlayActive = () =>
+    headerEl.classList.contains('searching') ||
+    headerEl.classList.contains('menuing') ||
+    headerEl.classList.contains('searching--mobile') ||
+    basketEl?.classList.contains('show') ||
+    navEl.classList.contains('menuing')
+
+  const setHeaderVisibility = (visible) => {
+    headerEl.classList.toggle('is-scroll-hidden', !visible)
+    navEl.classList.toggle('is-offset-for-header', visible)
+    isHeaderVisible = visible
+  }
+
+  const resetHeaderRevealState = () => {
+    setHeaderVisibility(true)
+  }
+
+  const revealHeader = () => {
+    if (!isHeaderVisible) {
+      setHeaderVisibility(true)
+    }
+  }
+
+  const hideHeader = () => {
+    if (isHeaderVisible) {
+      setHeaderVisibility(false)
+    }
+  }
+
+  const initializeHeaderRevealState = () => {
+    const currentScrollY = getScrollY()
+    const activationOffset = Math.max(
+      (headerEl.offsetHeight || 0) + 8,
+      HEADER_REVEAL_CONFIG.activationOffset
+    )
+
+    lastScrollY = currentScrollY
+    pendingScrollDelta = 0
+    lastScrollDirection = 0
+    clearScrollIdleTimer()
+
+    if (
+      currentScrollY <= activationOffset ||
+      isHeaderOverlayActive() ||
+      rootEl.classList.contains('fixed')
+    ) {
+      setHeaderVisibility(true)
+      return
+    }
+
+    setHeaderVisibility(false)
+  }
+
+  const syncHeaderRevealState = ({ forceVisible = false } = {}) => {
+    const currentScrollY = getScrollY()
+    const activationOffset = Math.max(
+      (headerEl.offsetHeight || 0) + 8,
+      HEADER_REVEAL_CONFIG.activationOffset
+    )
+
+    if (currentScrollY <= activationOffset) {
+      resetHeaderRevealState()
+      lastScrollY = currentScrollY
+      pendingScrollDelta = 0
+      lastScrollDirection = 0
+      clearScrollIdleTimer()
+      return
+    }
+
+    if (forceVisible || isHeaderOverlayActive() || rootEl.classList.contains('fixed')) {
+      revealHeader()
+      lastScrollY = currentScrollY
+      pendingScrollDelta = 0
+      lastScrollDirection = 0
+      clearScrollIdleTimer()
+      return
+    }
+
+    const delta = currentScrollY - lastScrollY
+    lastScrollY = currentScrollY
+
+    if (Math.abs(delta) < 1) {
+      return
+    }
+
+    const direction = delta > 0 ? 1 : -1
+
+    if (lastScrollDirection && lastScrollDirection !== direction) {
+      pendingScrollDelta = 0
+    }
+
+    if (
+      (direction > 0 && !isHeaderVisible) ||
+      (direction < 0 && isHeaderVisible)
+    ) {
+      pendingScrollDelta = 0
+      lastScrollDirection = direction
+      queueScrollIdleReset()
+      return
+    } else {
+      pendingScrollDelta += delta
+    }
+
+    lastScrollDirection = direction
+    queueScrollIdleReset()
+
+    if (pendingScrollDelta >= HEADER_REVEAL_CONFIG.hideThreshold) {
+      hideHeader()
+      pendingScrollDelta = 0
+      return
+    }
+
+    if (pendingScrollDelta <= HEADER_REVEAL_CONFIG.revealThreshold * -1) {
+      revealHeader()
+      pendingScrollDelta = 0
+    }
+  }
+
+  const queueHeaderRevealSync = (options) => {
+    if (options?.forceVisible) {
+      syncHeaderRevealState(options)
+      return
+    }
+
+    if (isHeaderRevealTicking) {
+      return
+    }
+
+    isHeaderRevealTicking = true
+    window.requestAnimationFrame(() => {
+      isHeaderRevealTicking = false
+      syncHeaderRevealState()
+    })
+  }
+
   const syncInteractiveStates = () => {
     const isBasketOpen = basketEl?.classList.contains('show') ?? false
     const isSearchOpen = headerEl.classList.contains('searching')
@@ -271,6 +474,8 @@ const initHeaderAndNavigation = () => {
     if (navMenuToggleEl) {
       navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
     }
+
+    syncHeaderRevealState({ forceVisible: isHeaderOverlayActive() })
   }
 
   const clearSearchFocusTimer = () => {
@@ -525,6 +730,13 @@ const initHeaderAndNavigation = () => {
   window.addEventListener('touchstart', clearKeyboardInteraction, { passive: true })
   window.addEventListener('scroll', handleSearchScrollClose, { passive: true })
   window.addEventListener('scroll', handleBasketScrollClose, { passive: true })
+  window.addEventListener('scroll', () => {
+    syncBrowserTopOffset()
+    queueHeaderRevealSync()
+  }, { passive: true })
+
+  window.visualViewport?.addEventListener('resize', syncBrowserTopOffset)
+  window.visualViewport?.addEventListener('scroll', syncBrowserTopOffset)
 
   searchInputEl?.addEventListener('focus', () => {
     applySearchKeyboardFocusState()
@@ -650,6 +862,8 @@ const initHeaderAndNavigation = () => {
   })
 
   window.addEventListener('resize', () => {
+    syncBrowserTopOffset()
+
     if (isMobileViewport()) {
       headerEl.classList.remove('searching')
     } else {
@@ -660,9 +874,28 @@ const initHeaderAndNavigation = () => {
 
     clearSearchKeyboardFocusState()
     syncScrollLock()
+    syncHeaderRevealState()
   })
 
+  rootEl.style.setProperty(
+    '--header-reveal-duration',
+    `${HEADER_REVEAL_CONFIG.transitionDuration}ms`
+  )
+
+  syncBrowserTopOffset()
   syncInteractiveStates()
+  initializeHeaderRevealState()
+
+  // Browsers may restore scroll position after initial script execution.
+  window.requestAnimationFrame(() => {
+    syncBrowserTopOffset()
+    initializeHeaderRevealState()
+  })
+
+  window.addEventListener('pageshow', () => {
+    syncBrowserTopOffset()
+    initializeHeaderRevealState()
+  })
 }
 
 const initIntersectionReveal = () => {
