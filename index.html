@@ -36,6 +36,7 @@
 
 		<header aria-label="전역 헤더">
     <div class="inner">
+      <div class="global-nav" role="navigation" aria-label="전역">
       
       <!-- 데스크탑 메뉴 -->
       <ul class="menu">
@@ -50,7 +51,7 @@
         <li class="apple-logo"><a href="./index.html">Apple</a></li>
         <li><a href="https://www.apple.com/kr/store">스토어</a></li>
         <li><a href="https://www.apple.com/kr/mac/">Mac</a></li>
-        <li><a href="https://www.apple.com/kr/ipad/">iPad</a></li>
+        <li><a href="https://www.apple.com/kr/ipad/" aria-current="page">iPad</a></li>
         <li><a href="https://www.apple.com/kr/iphone/">iPhone</a></li>
         <li><a href="https://www.apple.com/kr/watch/">Watch</a></li>
         <li><a href="https://www.apple.com/kr/airpods/">AirPods</a></li>
@@ -59,77 +60,159 @@
         <li><a href="https://www.apple.com/kr/shop/accessories/all">액세서리</a></li>
         <li><a href="https://support.apple.com/ko-kr">고객지원</a></li>
         <li class="search-starter">
-          <button type="button" aria-label="검색 열기" aria-controls="global-search" aria-expanded="false">검색</button>
+          <button type="button" data-panel-trigger="search" aria-label="검색 열기" aria-controls="header-search-flyout" aria-expanded="false">검색</button>
         </li>
         <li class="basket-starter">
-          <button type="button" aria-label="장바구니 열기" aria-controls="basket-menu" aria-expanded="false" aria-haspopup="true">장바구니</button>
-          <div class="basket" id="basket-menu" aria-label="장바구니 메뉴">
-            <div class="arrow" aria-hidden="true"></div>
-            <div class="message">
-              장바구니가 비어 있습니다.
-            </div>
-            <ul>
-              <li><a href="https://www.apple.com/kr/shop/bag">장바구니</a></li>
-              <li><a href="https://www.apple.com/kr/store">저장해 둔 항목</a></li>
-              <li><a href="https://www.apple.com/kr/shop/order/list">주문</a></li>
-              <li><a href="https://www.apple.com/kr/shop/account/home">계정</a></li>
-              <li><a href="https://www.apple.com/kr/shop/account/home">로그인</a></li>
-            </ul>
-          </div>
+          <button type="button" data-panel-trigger="basket" aria-label="장바구니 열기" aria-controls="header-basket-flyout" aria-expanded="false" aria-haspopup="true">장바구니</button>
         </li>
       </ul>
 
-    <!-- header Search-bar  -->
+      <div class="header-flyout" aria-hidden="true">
+        <div class="header-flyout__panels">
+          <section
+            class="search-wrap global-panel global-panel--search header-flyout-panel header-flyout-panel--search"
+            id="header-search-flyout"
+            data-panel="search"
+            role="search"
+            aria-label="apple.com 검색하기"
+            aria-hidden="true">
+            <div class="header-flyout-panel__scroll global-mobile-panel__scroll">
+              <div class="search inner header-flyout-panel__inner header-flyout-panel__content global-mobile-panel__shell">
+                <div class="global-mobile-panel__bar">
+                  <h2 class="sr-only" id="header-search-mobile-title">검색</h2>
+                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="search" aria-label="검색 닫기"></button>
+                </div>
+                <div class="global-mobile-panel__body global-mobile-panel__body--search">
+                  <form class="header-search-form mobile-panel-item" role="search" aria-label="apple.com 검색하기" style="--mobile-panel-item-index: 0">
+                    <div class="textfield header-search-field">
+                      <label class="sr-only" for="global-search-input">apple.com 검색하기</label>
+                      <input
+                        type="search"
+                        name="q"
+                        id="global-search-input"
+                        placeholder="apple.com 검색하기"
+                        aria-label="apple.com 검색하기"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false">
+                      <div class="search-icon header-search-field__icon" aria-hidden="true"></div>
+                      <button type="button" class="search-reset header-search-field__reset" aria-label="검색어 지우기" hidden></button>
+                      <button type="button" class="search-closer header-search-field__close" aria-label="검색 닫기"></button>
+                    </div>
+                  </form>
+                  <button type="button" class="search-canceler">취소</button>
+                  <div class="autocompletes header-search-results" aria-labelledby="global-search-quick-links-title">
+                    <div class="header-search-results__section">
+                      <h2 id="global-search-quick-links-title" class="header-search-results__title mobile-panel-item" style="--mobile-panel-item-index: 1">빠른 링크</h2>
+                      <ul class="header-search-results__list">
+                        <li class="header-search-results__item mobile-panel-item" style="--mobile-panel-item-index: 2">
+                          <a class="header-search-results__link" href="https://www.apple.com/kr/retail/">
+                            <span class="header-search-results__icon" aria-hidden="true"></span>
+                            <span class="header-search-results__text">매장 찾기</span>
+                          </a>
+                        </li>
+                        <li class="header-search-results__item mobile-panel-item" style="--mobile-panel-item-index: 3">
+                          <a class="header-search-results__link" href="https://www.apple.com/kr/apple-vision-pro/">
+                            <span class="header-search-results__icon" aria-hidden="true"></span>
+                            <span class="header-search-results__text">Apple Vision Pro</span>
+                          </a>
+                        </li>
+                        <li class="header-search-results__item mobile-panel-item" style="--mobile-panel-item-index: 4">
+                          <a class="header-search-results__link" href="https://www.apple.com/kr/airpods/">
+                            <span class="header-search-results__icon" aria-hidden="true"></span>
+                            <span class="header-search-results__text">AirPods</span>
+                          </a>
+                        </li>
+                        <li class="header-search-results__item mobile-panel-item" style="--mobile-panel-item-index: 5">
+                          <a class="header-search-results__link" href="https://www.apple.com/kr/apple-intelligence/">
+                            <span class="header-search-results__icon" aria-hidden="true"></span>
+                            <span class="header-search-results__text">Apple Intelligence</span>
+                          </a>
+                        </li>
+                        <li class="header-search-results__item mobile-panel-item" style="--mobile-panel-item-index: 6">
+                          <a class="header-search-results__link" href="https://www.apple.com/kr/shop/trade-in">
+                            <span class="header-search-results__icon" aria-hidden="true"></span>
+                            <span class="header-search-results__text">Apple Trade In</span>
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-      <div class="search-wrap" id="global-search" role="search" aria-label="사이트 검색" aria-hidden="true">
-        <div class="search">
-          <div class="shadow" aria-hidden="true"></div>
-          <div class="textfield">
-            <label class="sr-only" for="global-search-input">Apple 사이트 검색</label>
-            <input type="search" name="q" id="global-search-input" placeholder="apple.com 검색" autocomplete="off">
-            <div class="search-icon" aria-hidden="true"></div>
-            <button type="button" class="search-closer" aria-label="검색 닫기"></button>
-          </div>
-          <button type="button" class="search-canceler">취소</button>
-          <!-- [A11Y 추가] 빠른 링크는 실제 이동 가능한 핵심 링크이므로 유지 -->
-          <div class="autocompletes">
-            <h2>빠른 링크</h2>
-            <ul>
-              <li><a href="https://www.apple.com/kr/store">Apple Store Online에서 쇼핑하기</a></li>
-              <li><a href="https://www.apple.com/kr/shop/accessories/all">액세서리</a></li>
-              <li><a href="https://www.apple.com/kr/airpods/">AirPods</a></li>
-              <li><a href="https://www.apple.com/kr/airtag/">AirTag</a></li>
-              <li><a href="https://www.apple.com/kr/shop/trade-in">Apple Trade In</a></li>
-            </ul>
-          </div>
+          <section
+            class="basket global-panel global-panel--basket header-flyout-panel header-flyout-panel--basket"
+            id="header-basket-flyout"
+            data-panel="basket"
+            aria-labelledby="basket-menu-title"
+            aria-hidden="true">
+            <div class="header-flyout-panel__scroll global-mobile-panel__scroll">
+              <div class="inner basket-panel-inner header-flyout-panel__inner header-flyout-panel__content global-mobile-panel__shell">
+                <div class="global-mobile-panel__bar">
+                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="basket" aria-label="장바구니 닫기"></button>
+                </div>
+                <div class="global-mobile-panel__body global-mobile-panel__body--basket">
+                  <h2 class="sr-only" id="basket-menu-title">장바구니 빠른 메뉴</h2>
+                  <div class="message mobile-panel-item" style="--mobile-panel-item-index: 0">
+                    <strong>장바구니가 비어 있습니다.</strong>
+                    <p>저장해둔 항목이 있는지 확인하려면 <a class="basket-login-link" href="https://www.apple.com/kr/shop/account/home">로그인</a>하세요.</p>
+                  </div>
+                  <p class="basket-section-title mobile-panel-item" style="--mobile-panel-item-index: 1">내 프로필</p>
+                  <ul class="basket-links">
+                    <li class="mobile-panel-item" style="--mobile-panel-item-index: 2"><a class="basket-link basket-link--orders" href="https://www.apple.com/kr/shop/order/list"><span class="basket-link__label">주문</span></a></li>
+                    <li class="mobile-panel-item" style="--mobile-panel-item-index: 3"><a class="basket-link basket-link--saved" href="https://www.apple.com/kr/store"><span class="basket-link__label">관심 목록</span></a></li>
+                    <li class="mobile-panel-item" style="--mobile-panel-item-index: 4"><a class="basket-link basket-link--account" href="https://www.apple.com/kr/shop/account/home"><span class="basket-link__label">계정</span></a></li>
+                    <li class="mobile-panel-item" style="--mobile-panel-item-index: 5"><a class="basket-link basket-link--signin" href="https://www.apple.com/kr/shop/account/home"><span class="basket-link__label">로그인</span></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
       <!-- 모바일 미디어쿼리 메뉴 -->
-      <div class="clone-menu" id="global-mobile-menu">
-        <ul>
-          <li><a href="https://www.apple.com/kr/store">스토어</a></li>
-          <li><a href="https://www.apple.com/kr/mac/">Mac</a></li>
-          <li><a href="https://www.apple.com/kr/ipad/">iPad</a></li>
-          <li><a href="https://www.apple.com/kr/iphone/">iPhone</a></li>
-          <li><a href="https://www.apple.com/kr/watch/">Watch</a></li>
-          <li><a href="https://www.apple.com/kr/airpods/">AirPods</a></li>
-          <li><a href="https://www.apple.com/kr/tv-home/">TV 및 홈</a></li>
-          <li><a href="https://www.apple.com/kr/store">Apple Store</a></li>
-          <li><a href="https://www.apple.com/kr/shop/accessories/all">액세서리</a></li>
-          <li><a href="https://support.apple.com/ko-kr">고객지원</a></li>
-        </ul>
+      <div class="clone-menu" id="global-mobile-menu" aria-labelledby="global-mobile-menu-title" aria-hidden="true">
+        <div class="global-mobile-panel__scroll">
+          <div class="global-mobile-panel__shell global-mobile-panel__shell--menu">
+            <div class="global-mobile-panel__bar">
+              <h2 class="sr-only" id="global-mobile-menu-title">전역 메뉴 링크</h2>
+              <button type="button" class="global-mobile-panel__close mobile-panel-close mobile-menu-close" data-mobile-panel-close="menu" aria-label="전역 메뉴 닫기"></button>
+            </div>
+            <div class="global-mobile-panel__body global-mobile-panel__body--menu">
+              <ul>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 0; --mobile-panel-item-index: 0"><a href="https://www.apple.com/kr/store">스토어</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 1; --mobile-panel-item-index: 1"><a href="https://www.apple.com/kr/mac/">Mac</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 2; --mobile-panel-item-index: 2"><a href="https://www.apple.com/kr/ipad/" aria-current="page">iPad</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 3; --mobile-panel-item-index: 3"><a href="https://www.apple.com/kr/iphone/">iPhone</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 4; --mobile-panel-item-index: 4"><a href="https://www.apple.com/kr/watch/">Watch</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 5; --mobile-panel-item-index: 5"><a href="https://www.apple.com/kr/airpods/">AirPods</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 6; --mobile-panel-item-index: 6"><a href="https://www.apple.com/kr/tv-home/">TV 및 홈</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 7; --mobile-panel-item-index: 7"><a href="https://www.apple.com/kr/store">Apple Store</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 8; --mobile-panel-item-index: 8"><a href="https://www.apple.com/kr/shop/accessories/all">액세서리</a></li>
+                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 9; --mobile-panel-item-index: 9"><a href="https://support.apple.com/ko-kr">고객지원</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
 
     </div>
+    
   </header>
-
+<!-- Flyout curtain stays outside the header so the glass layer is independent from the panel surface. -->
+<div class="global-panel-backdrop header-flyout-curtain" aria-hidden="true" data-panel-backdrop></div>
 <!-- Header -- end -->
 
 
 <!-- navigation -->
 
-  <nav aria-label="제품 내비게이션">
+  <nav class="product-nav" aria-label="제품 내비게이션">
     <div class="shadow" aria-hidden="true"></div>
     <div class="contents-bg" aria-hidden="true"></div>
     <div class="inner">
