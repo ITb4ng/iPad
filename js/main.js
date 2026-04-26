@@ -13,6 +13,18 @@ const SEARCH_CONFIG = Object.freeze({
   focusDelay: 280
 })
 
+const GLOBAL_PANEL_CONFIG = Object.freeze({
+  openDuration: 240,
+  closeDuration: 240,
+  closeCleanupDuration: 290,
+  hoverCloseArmDelay: 220,
+  autoCloseGuardDuration: 280
+})
+
+const MOBILE_MENU_CONFIG = Object.freeze({
+  closeCleanupDuration: 320
+})
+
 const HEADER_REVEAL_CONFIG = Object.freeze({
   activationOffset: 80,
   hideThreshold: 96,
@@ -69,8 +81,15 @@ const HERO_STATE_CLASSES = [
 ]
 
 const rootEl = document.documentElement
+const bodyEl = document.body
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 const isMobileViewport = () => window.innerWidth <= BREAKPOINTS.mobile
+const prefersReducedMotion = () => reducedMotionQuery.matches
+const getPanelOpenDuration = () => (prefersReducedMotion() ? 20 : GLOBAL_PANEL_CONFIG.openDuration)
+const getPanelCloseCleanupDuration = () =>
+  prefersReducedMotion() ? 20 : GLOBAL_PANEL_CONFIG.closeCleanupDuration
+const getSearchFocusDelay = () => (prefersReducedMotion() ? 0 : SEARCH_CONFIG.focusDelay)
 
 let stableBrowserTopOffset = 0
 let hasStableBrowserTopOffset = false
@@ -193,28 +212,42 @@ const setTransitionDelays = (
 
 const initHeaderAndNavigation = () => {
   const headerEl = document.querySelector('header')
-  const navEl = document.querySelector('nav')
+  const navEl = document.querySelector('nav.product-nav')
 
   if (!headerEl || !navEl) {
     return
   }
 
   const basketStarterEl = headerEl.querySelector('.basket-starter > button')
-  const basketEl = headerEl.querySelector('.basket-starter .basket')
-  const basketWrapEl = basketStarterEl?.closest('.basket-starter')
+  const flyoutRootEl = headerEl.querySelector('.header-flyout')
+  const basketEl = headerEl.querySelector('#header-basket-flyout')
+  const basketPanelInnerEl = basketEl?.querySelector('.basket-panel-inner')
+  const basketPanelBarEl = basketEl?.querySelector('.global-mobile-panel__bar')
+  const basketPanelBodyEl = basketEl?.querySelector('.global-mobile-panel__body--basket')
+  const basketWrapEl = basketEl
   const basketMenuLinkEls = basketEl ? [...basketEl.querySelectorAll('a')] : []
   const headerMenuEls = [...headerEl.querySelectorAll('ul.menu > li')]
+  const cloneMenuEl = headerEl.querySelector('#global-mobile-menu')
+  const menuMobileCloseEl = cloneMenuEl?.querySelector('[data-mobile-panel-close="menu"]')
+  const cloneMenuLinkEls = cloneMenuEl ? [...cloneMenuEl.querySelectorAll('a')] : []
   const searchWrapEl = headerEl.querySelector('.search-wrap')
+  const searchPanelEl = searchWrapEl?.querySelector('.search')
   const searchStarterEl = headerEl.querySelector('.search-starter > button')
   const searchCloserEl = searchWrapEl?.querySelector('.search-closer')
-  const searchShadowEl = searchWrapEl?.querySelector('.shadow')
+  const searchMobileCloseEl = searchWrapEl?.querySelector('[data-mobile-panel-close="search"]')
+  const searchResetEl = searchWrapEl?.querySelector('.search-reset')
   const searchInputEl = searchWrapEl?.querySelector('input')
   const searchDelayEls = searchWrapEl ? [...searchWrapEl.querySelectorAll('li')] : []
   const searchQuickLinkEls = searchWrapEl
     ? [...searchWrapEl.querySelectorAll('.autocompletes a')]
     : []
+  const basketMobileCloseEl = basketEl?.querySelector('[data-mobile-panel-close="basket"]')
+  const mobilePanelCloseEls = [...headerEl.querySelectorAll('[data-mobile-panel-close]')]
+  const panelBackdropEl = document.querySelector('[data-panel-backdrop]')
+  const panelTriggerEls = [...headerEl.querySelectorAll('[data-panel-trigger]')]
+  const globalMenuListEl = headerEl.querySelector('ul.menu')
   const menuStarterEl = headerEl.querySelector('.menu-starter > button')
-  const searchTextFieldEl = headerEl.querySelector('.textfield')
+  const searchTextFieldEl = headerEl.querySelector('.header-search-field')
   const searchCancelEl = headerEl.querySelector('.search-canceler')
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
@@ -222,8 +255,20 @@ const initHeaderAndNavigation = () => {
 
   let scrollLockY = 0
   let searchFocusTimeoutId = 0
+  let activePanelType = null
+  // Track the rendered panel separately so close transitions can finish without re-mounting old content.
+  let renderedPanelType = null
+  let closingPanelType = null
+  let lastPanelTriggerEl = null
+  let panelHoverCloseTimer = 0
+  let panelVisualStateTimeoutId = 0
+  let panelHoverArmTimeoutId = 0
+  let mobileMenuCloseTimeoutId = 0
+  let isPanelHoverCloseArmed = false
+  let panelOpenedAt = 0
   let basketOpenMode = null
   let searchOpenMode = null
+  let headerMenuOpenMode = null
   let lastScrollY = window.scrollY || window.pageYOffset || 0
   let pendingScrollDelta = 0
   let isHeaderRevealTicking = false
@@ -272,6 +317,290 @@ const initHeaderAndNavigation = () => {
     applySearchKeyboardFocusState()
   }
 
+  const syncSearchResetState = () => {
+    if (!searchInputEl || !searchResetEl) {
+      return
+    }
+
+    const hasValue = searchInputEl.value.length > 0
+    searchResetEl.disabled = !hasValue
+    searchResetEl.tabIndex = hasValue ? 0 : -1
+    searchResetEl.hidden = !hasValue
+    searchResetEl.classList.toggle('is-visible', hasValue)
+  }
+
+  const syncBasketPanelHeight = () => {
+    if (!basketPanelInnerEl) {
+      return
+    }
+
+    if (isMobileViewport()) {
+      rootEl.style.removeProperty('--basket-panel-height')
+      return
+    }
+
+    const innerStyles = getComputedStyle(basketPanelInnerEl)
+    const paddingTop = parseFloat(innerStyles.paddingTop) || 0
+    const paddingBottom = parseFloat(innerStyles.paddingBottom) || 0
+    const bodyHeight = basketPanelBodyEl ? Math.ceil(basketPanelBodyEl.scrollHeight) : 0
+    const barHeight =
+      basketPanelBarEl && getComputedStyle(basketPanelBarEl).display !== 'none'
+        ? Math.ceil(basketPanelBarEl.getBoundingClientRect().height)
+        : 0
+    const nextHeight = Math.max(Math.ceil(bodyHeight + barHeight + paddingTop + paddingBottom), 0)
+    rootEl.style.setProperty('--basket-panel-height', `${nextHeight}px`)
+  }
+
+  const getPanel = (type) => {
+    if (type === 'search') {
+      return searchWrapEl
+    }
+
+    if (type === 'basket') {
+      return basketEl
+    }
+
+    return null
+  }
+
+  const getPanelContent = (type) => {
+    if (type === 'search') {
+      return searchPanelEl
+    }
+
+    if (type === 'basket') {
+      return basketPanelInnerEl
+    }
+
+    return null
+  }
+
+  const getTrigger = (type) =>
+    panelTriggerEls.find((element) => element.dataset.panelTrigger === type) ?? null
+
+  const getTriggerListItem = (type = activePanelType) => getTrigger(type)?.closest('li') ?? null
+
+  const getMobileCloseButton = (type) => {
+    if (type === 'menu') {
+      return menuMobileCloseEl ?? null
+    }
+
+    if (type === 'search') {
+      return searchMobileCloseEl ?? null
+    }
+
+    if (type === 'basket') {
+      return basketMobileCloseEl ?? null
+    }
+
+    return null
+  }
+
+  const isMobilePanelType = (type) => isMobileViewport() && (type === 'search' || type === 'basket')
+
+  const getMobileFlyoutContainer = (type) => {
+    if (type === 'menu') {
+      return cloneMenuEl ?? null
+    }
+
+    if (type === 'search') {
+      return searchWrapEl ?? null
+    }
+
+    if (type === 'basket') {
+      return basketEl ?? null
+    }
+
+    return null
+  }
+
+  const getMobilePanelFocusables = (type) => {
+    const panelEl = getMobileFlyoutContainer(type)
+
+    if (!panelEl) {
+      return []
+    }
+
+    return [...panelEl.querySelectorAll(FOCUSABLE_SELECTOR)].filter(isFocusableElementVisible)
+  }
+
+  const focusMobilePanelCloseButton = (type) => {
+    const focusTargetEl = getMobileCloseButton(type) ?? getMobilePanelFocusables(type)[0] ?? null
+    focusTargetEl?.focus()
+  }
+
+  const trapMobilePanelFocus = (type, event) => {
+    if (!isMobileViewport() || event.key !== 'Tab') {
+      return false
+    }
+
+    const focusableEls = getMobilePanelFocusables(type)
+
+    if (!focusableEls.length) {
+      return false
+    }
+
+    const firstFocusableEl = focusableEls[0]
+    const lastFocusableEl = focusableEls[focusableEls.length - 1]
+    const activeEl = document.activeElement
+    const isInsidePanel = focusableEls.includes(activeEl)
+
+    if (event.shiftKey) {
+      if (activeEl === firstFocusableEl || !isInsidePanel) {
+        event.preventDefault()
+        lastFocusableEl.focus()
+        return true
+      }
+
+      return false
+    }
+
+    if (activeEl === lastFocusableEl || !isInsidePanel) {
+      event.preventDefault()
+      firstFocusableEl.focus()
+      return true
+    }
+
+    return false
+  }
+
+  const clearMobileMenuCloseTimer = () => {
+    if (!mobileMenuCloseTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(mobileMenuCloseTimeoutId)
+    mobileMenuCloseTimeoutId = 0
+  }
+
+  const getActiveMobileFlyoutType = () => {
+    if (!isMobileViewport()) {
+      return null
+    }
+
+    return bodyEl?.dataset.mobileFlyout ?? null
+  }
+
+  const syncPanelAccessibility = ({
+    isSearchOpen = false,
+    isBasketOpen = false,
+    isHeaderMenuOpen = false,
+    isFlyoutOpen = false
+  } = {}) => {
+    const isMobile = isMobileViewport()
+
+    if (searchWrapEl) {
+      if (isMobile) {
+        searchWrapEl.setAttribute('role', 'dialog')
+        searchWrapEl.setAttribute('aria-labelledby', 'header-search-mobile-title')
+        searchWrapEl.setAttribute('aria-modal', String(isSearchOpen))
+        searchWrapEl.removeAttribute('aria-label')
+        searchWrapEl.inert = !isSearchOpen
+      } else {
+        searchWrapEl.setAttribute('role', 'search')
+        searchWrapEl.setAttribute('aria-label', 'apple.com 검색하기')
+        searchWrapEl.removeAttribute('aria-labelledby')
+        searchWrapEl.removeAttribute('aria-modal')
+        searchWrapEl.inert = false
+      }
+    }
+
+    if (basketEl) {
+      if (isMobile) {
+        basketEl.setAttribute('role', 'dialog')
+        basketEl.setAttribute('aria-modal', String(isBasketOpen))
+        basketEl.inert = !isBasketOpen
+      } else {
+        basketEl.removeAttribute('role')
+        basketEl.removeAttribute('aria-modal')
+        basketEl.inert = false
+      }
+    }
+
+    if (cloneMenuEl) {
+      if (isMobile) {
+        cloneMenuEl.setAttribute('role', 'dialog')
+        cloneMenuEl.setAttribute('aria-modal', String(isHeaderMenuOpen))
+        cloneMenuEl.inert = !isHeaderMenuOpen
+      } else {
+        cloneMenuEl.removeAttribute('role')
+        cloneMenuEl.removeAttribute('aria-modal')
+        cloneMenuEl.inert = false
+      }
+    }
+
+    flyoutRootEl?.setAttribute(
+      'aria-hidden',
+      String(isMobile ? !(isSearchOpen || isBasketOpen) : !isFlyoutOpen)
+    )
+  }
+
+  const clearPanelHoverCloseTimer = () => {
+    if (!panelHoverCloseTimer) {
+      return
+    }
+
+    window.clearTimeout(panelHoverCloseTimer)
+    panelHoverCloseTimer = 0
+  }
+
+  const clearPanelHoverArmTimer = () => {
+    if (!panelHoverArmTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(panelHoverArmTimeoutId)
+    panelHoverArmTimeoutId = 0
+  }
+
+  const disarmPanelHoverClose = () => {
+    clearPanelHoverArmTimer()
+    isPanelHoverCloseArmed = false
+  }
+
+  const armPanelHoverClose = () => {
+    disarmPanelHoverClose()
+    panelHoverArmTimeoutId = window.setTimeout(() => {
+      isPanelHoverCloseArmed = true
+      panelHoverArmTimeoutId = 0
+    }, GLOBAL_PANEL_CONFIG.hoverCloseArmDelay)
+  }
+
+  const isAutoCloseGuardActive = () =>
+    activePanelType && Date.now() - panelOpenedAt < GLOBAL_PANEL_CONFIG.autoCloseGuardDuration
+
+  const debugClose = (source, extra = {}) => {
+    console.log('[flyout-close]', source, {
+      activePanelType,
+      ...extra
+    })
+  }
+
+  const clearPanelVisualStateTimer = () => {
+    if (!panelVisualStateTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(panelVisualStateTimeoutId)
+    panelVisualStateTimeoutId = 0
+  }
+
+  const isDesktopPointerEnvironment = () =>
+    !isMobileViewport() &&
+    window.matchMedia('(hover: hover) and (pointer: fine)').matches
+
+  const resetPanelVisualStates = () => {
+    ;[searchWrapEl, basketEl, panelBackdropEl].forEach((element) => {
+      element?.classList.remove('is-active', 'is-open', 'is-animating', 'is-closing', 'show')
+    })
+  }
+
+  const isPanelVisualTransitioning = () =>
+    [searchWrapEl, basketEl, panelBackdropEl].some(
+      (element) =>
+        element?.classList.contains('is-animating') || element?.classList.contains('is-closing')
+    )
+
   const setSearchOpenMode = (mode = null) => {
     searchOpenMode = mode
   }
@@ -280,11 +609,18 @@ const initHeaderAndNavigation = () => {
     basketOpenMode = mode
   }
 
+  const setHeaderMenuOpenMode = (mode = null) => {
+    headerMenuOpenMode = mode
+  }
+
   const isKeyboardBasketSession = () =>
-    basketOpenMode === 'keyboard' && basketEl?.classList.contains('show')
+    basketOpenMode === 'keyboard' && activePanelType === 'basket'
 
   const isKeyboardSearchSession = () =>
-    searchOpenMode === 'keyboard' && headerEl.classList.contains('searching')
+    searchOpenMode === 'keyboard' && activePanelType === 'search'
+
+  const isKeyboardHeaderMenuSession = () =>
+    headerMenuOpenMode === 'keyboard' && headerEl.classList.contains('menuing')
 
   const isPointerSearchSession = () =>
     searchOpenMode === 'pointer' && headerEl.classList.contains('searching')
@@ -310,10 +646,12 @@ const initHeaderAndNavigation = () => {
   }
 
   const isHeaderOverlayActive = () =>
+    headerEl.classList.contains('is-header-flyout-open') ||
+    headerEl.classList.contains('is-global-panel-open') ||
     headerEl.classList.contains('searching') ||
     headerEl.classList.contains('menuing') ||
+    headerEl.classList.contains('is-mobile-menu-closing') ||
     headerEl.classList.contains('searching--mobile') ||
-    basketEl?.classList.contains('show') ||
     navEl.classList.contains('menuing')
 
   const setHeaderVisibility = (visible) => {
@@ -444,20 +782,101 @@ const initHeaderAndNavigation = () => {
     })
   }
 
-  const syncInteractiveStates = () => {
-    const isBasketOpen = basketEl?.classList.contains('show') ?? false
-    const isSearchOpen = headerEl.classList.contains('searching')
-    const isHeaderMenuOpen = headerEl.classList.contains('menuing')
-    const isNavMenuOpen = navEl.classList.contains('menuing')
-    const isSearchPanelVisible = isSearchOpen || (isMobileViewport() && isHeaderMenuOpen)
+  const syncFlyoutPanelMetrics = (type = activePanelType) => {
+    if (type === 'basket') {
+      syncBasketPanelHeight()
+    }
 
+    const headerHeight = headerEl.offsetHeight || 44
+    const defaultPanelHeight =
+      parseInt(getComputedStyle(rootEl).getPropertyValue('--global-panel-height'), 10) || 388
+    let panelBottom = headerHeight + defaultPanelHeight
+
+    if (type) {
+      const panelContentEl = getPanelContent(type) ?? getPanel(type)
+
+      if (panelContentEl) {
+        panelBottom = isMobileViewport()
+          ? headerHeight
+          : Math.max(Math.round(panelContentEl.getBoundingClientRect().bottom), headerHeight)
+      }
+    }
+
+    rootEl.style.setProperty('--global-panel-top', `${headerHeight}px`)
+    rootEl.style.setProperty('--global-panel-bottom', `${panelBottom}px`)
+    rootEl.style.setProperty('--global-panel-backdrop-top', `${panelBottom}px`)
+    rootEl.style.setProperty('--search-overlay-top', `${panelBottom}px`)
+    rootEl.style.setProperty('--basket-overlay-top', `${panelBottom}px`)
+    rootEl.style.setProperty('--search-panel-bottom', `${panelBottom}px`)
+  }
+
+  const syncGlobalPanelBackdropPosition = (type = activePanelType) => {
+    syncFlyoutPanelMetrics(type)
+  }
+
+  const syncSearchOverlayPosition = () => {
+    syncFlyoutPanelMetrics('search')
+  }
+
+  const syncBasketOverlayPosition = () => {
+    syncFlyoutPanelMetrics('basket')
+  }
+
+  const syncInteractiveStates = () => {
+    const visualPanelType = activePanelType ?? closingPanelType ?? renderedPanelType
+    const isBasketOpen = activePanelType === 'basket'
+    const isSearchOpen = activePanelType === 'search'
+    const isBasketRendered = visualPanelType === 'basket'
+    const isSearchRendered = visualPanelType === 'search'
+    const isHeaderMenuOpen = headerEl.classList.contains('menuing')
+    const isMobileMenuClosing = headerEl.classList.contains('is-mobile-menu-closing')
+    const isHeaderMenuVisible = isHeaderMenuOpen || (isMobileViewport() && isMobileMenuClosing)
+    const isNavMenuOpen = navEl.classList.contains('menuing')
+    const isMobileHeaderOverlayOpen = isMobileViewport() && (isHeaderMenuOpen || isSearchOpen || isBasketOpen)
+    const isFlyoutOpen = Boolean(visualPanelType)
+    const mobileFlyoutType = isMobileViewport()
+      ? isHeaderMenuVisible
+        ? 'menu'
+        : visualPanelType
+      : null
+    const isMobileFlyoutClosing = isMobileViewport() && Boolean(isMobileMenuClosing || closingPanelType)
+
+    rootEl.classList.toggle('is-header-flyout-open', isFlyoutOpen)
+    headerEl.classList.toggle('is-header-flyout-open', isFlyoutOpen)
+    headerEl.classList.toggle('is-search-open', isSearchOpen)
+    headerEl.classList.toggle('is-basket-open', isBasketOpen)
+    headerEl.classList.toggle('is-global-panel-open', isFlyoutOpen)
+    headerEl.classList.toggle('is-search-panel-open', isSearchOpen)
+    headerEl.classList.toggle('is-basket-panel-open', isBasketOpen)
+    headerEl.classList.toggle('searching', isSearchOpen)
+    headerEl.classList.toggle('basketing', isBasketOpen)
+    basketEl?.classList.toggle('show', isBasketRendered)
+    basketEl?.classList.toggle('is-active', isBasketRendered)
+    searchWrapEl?.classList.toggle('is-active', isSearchRendered)
+    flyoutRootEl?.setAttribute(
+      'aria-hidden',
+      String(isMobileViewport() ? !(isSearchRendered || isBasketRendered) : !isFlyoutOpen)
+    )
     setExpandedState(basketStarterEl, isBasketOpen)
     setExpandedState(searchStarterEl, isSearchOpen)
     setExpandedState(menuStarterEl, isHeaderMenuOpen)
     setExpandedState(navMenuToggleEl, isNavMenuOpen)
-    setHiddenState(basketEl, !isBasketOpen)
-    setHiddenState(searchWrapEl, !isSearchPanelVisible)
+    setHiddenState(basketEl, !isBasketRendered)
+    setHiddenState(searchWrapEl, !isSearchRendered)
+    setHiddenState(panelBackdropEl, isMobileViewport() || !isFlyoutOpen)
+    setHiddenState(cloneMenuEl, !isHeaderMenuVisible || !isMobileViewport())
     setHiddenState(navMenuEl, isMobileViewport() ? !isNavMenuOpen : false)
+    syncPanelAccessibility({ isSearchOpen, isBasketOpen, isHeaderMenuOpen, isFlyoutOpen })
+    bodyEl?.classList.toggle('is-mobile-flyout-open', Boolean(mobileFlyoutType))
+    bodyEl?.classList.toggle('is-mobile-flyout-closing', isMobileFlyoutClosing)
+
+    if (bodyEl) {
+      if (mobileFlyoutType) {
+        bodyEl.dataset.mobileFlyout = mobileFlyoutType
+      } else {
+        delete bodyEl.dataset.mobileFlyout
+      }
+    }
 
     if (basketStarterEl) {
       basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
@@ -468,12 +887,73 @@ const initHeaderAndNavigation = () => {
     }
 
     if (menuStarterEl) {
-      menuStarterEl.setAttribute('aria-label', isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기')
+      menuStarterEl.setAttribute(
+        'aria-label',
+        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
+      )
     }
 
     if (navMenuToggleEl) {
       navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
     }
+
+    if (basketStarterEl) {
+      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
+    }
+
+    if (searchStarterEl) {
+      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
+    }
+
+    if (menuStarterEl) {
+      menuStarterEl.setAttribute(
+        'aria-label',
+        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
+      )
+    }
+
+    if (navMenuToggleEl) {
+      navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
+    }
+
+    if (basketStarterEl) {
+      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
+    }
+
+    if (searchStarterEl) {
+      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
+    }
+
+    if (menuStarterEl) {
+      menuStarterEl.setAttribute(
+        'aria-label',
+        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
+      )
+    }
+
+    if (navMenuToggleEl) {
+      navMenuToggleEl.setAttribute(
+        'aria-label',
+        isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기'
+      )
+    }
+
+    basketStarterEl?.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
+    searchStarterEl?.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
+    menuStarterEl?.setAttribute('aria-label', isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기')
+    navMenuToggleEl?.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
+
+    basketStarterEl?.setAttribute('aria-label', isBasketOpen ? '\uC7A5\uBC14\uAD6C\uB2C8 \uB2EB\uAE30' : '\uC7A5\uBC14\uAD6C\uB2C8 \uC5F4\uAE30')
+    searchStarterEl?.setAttribute('aria-label', isSearchOpen ? '\uAC80\uC0C9 \uB2EB\uAE30' : '\uAC80\uC0C9 \uC5F4\uAE30')
+    menuStarterEl?.setAttribute(
+      'aria-label',
+      isMobileHeaderOverlayOpen
+        ? '\uB2EB\uAE30'
+        : isHeaderMenuOpen
+          ? '\uC804\uC5ED \uBA54\uB274 \uB2EB\uAE30'
+          : '\uC804\uC5ED \uBA54\uB274 \uC5F4\uAE30'
+    )
+    navMenuToggleEl?.setAttribute('aria-label', isNavMenuOpen ? '\uC81C\uD488 \uBA54\uB274 \uB2EB\uAE30' : '\uC81C\uD488 \uBA54\uB274 \uC5F4\uAE30')
 
     syncHeaderRevealState({ forceVisible: isHeaderOverlayActive() })
   }
@@ -512,32 +992,45 @@ const initHeaderAndNavigation = () => {
   const syncScrollLock = () => {
     const shouldLock =
       headerEl.classList.contains('menuing') ||
+      headerEl.classList.contains('is-mobile-menu-closing') ||
       headerEl.classList.contains('searching--mobile') ||
+      (isMobileViewport() && Boolean(activePanelType)) ||
       (isMobileViewport() && navEl.classList.contains('menuing'))
 
     shouldLock ? lockScroll() : unlockScroll()
     syncInteractiveStates()
   }
 
-  const hideBasket = () => {
-    basketEl?.classList.remove('show')
-    setBasketOpenMode()
-    syncInteractiveStates()
-  }
+  const closeHeaderMenu = ({ restoreFocus = false } = {}) => {
+    const isMobileMenu = isMobileViewport()
+    const isMenuOpen = headerEl.classList.contains('menuing')
 
-  const showBasket = ({ mode = 'pointer' } = {}) => {
-    hideSearch()
-    hideNavMenu()
-    closeHeaderMenu()
-    closeMobileSearch()
-    basketEl?.classList.add('show')
-    setBasketOpenMode(mode)
-    syncInteractiveStates()
-  }
+    if (isMobileMenu && isMenuOpen) {
+      clearMobileMenuCloseTimer()
+      headerEl.classList.remove('menuing')
+      headerEl.classList.add('is-mobile-menu-closing')
+      cloneMenuEl?.classList.remove('is-open')
+      cloneMenuEl?.classList.add('is-closing')
+      setHeaderMenuOpenMode()
+      syncInteractiveStates()
 
-  const closeHeaderMenu = () => {
-    headerEl.classList.remove('menuing')
-    syncInteractiveStates()
+      mobileMenuCloseTimeoutId = window.setTimeout(() => {
+        headerEl.classList.remove('is-mobile-menu-closing')
+        cloneMenuEl?.classList.remove('is-closing')
+        syncInteractiveStates()
+        mobileMenuCloseTimeoutId = 0
+      }, prefersReducedMotion() ? 20 : MOBILE_MENU_CONFIG.closeCleanupDuration)
+    } else {
+      clearMobileMenuCloseTimer()
+      headerEl.classList.remove('menuing', 'is-mobile-menu-closing')
+      cloneMenuEl?.classList.remove('is-open', 'is-closing')
+      setHeaderMenuOpenMode()
+      syncInteractiveStates()
+    }
+
+    if (restoreFocus) {
+      menuStarterEl?.focus()
+    }
   }
 
   const closeMobileSearch = () => {
@@ -551,33 +1044,249 @@ const initHeaderAndNavigation = () => {
     syncScrollLock()
   }
 
-  const hideSearch = ({ clearInput = true } = {}) => {
-    clearSearchFocusTimer()
-    headerEl.classList.remove('searching')
-    setTransitionDelays(headerMenuEls, { reverse: true })
-    setTransitionDelays(searchDelayEls, { reverse: true })
+  const closeHeaderFlyout = ({
+    reason = 'unknown',
+    restoreFocus = false,
+    clearSearchInput = true
+  } = {}) => {
+    if (!activePanelType) {
+      console.log('[closeHeaderFlyout]', reason, { activePanelType })
+      return
+    }
 
-    if (clearInput && searchInputEl) {
+    console.log('[closeHeaderFlyout]', reason, { activePanelType })
+
+    const closingType = activePanelType
+    const closingPanelEl = getPanel(closingType)
+    const restoreTargetEl = restoreFocus ? lastPanelTriggerEl : null
+
+    clearPanelHoverCloseTimer()
+    disarmPanelHoverClose()
+    clearPanelVisualStateTimer()
+    clearSearchFocusTimer()
+    renderedPanelType = closingType
+    closingPanelType = closingType
+    activePanelType = null
+    closingPanelEl?.classList.remove('is-open', 'is-animating')
+    closingPanelEl?.classList.add('is-closing')
+    panelBackdropEl?.classList.remove('is-open', 'is-animating')
+    panelBackdropEl?.classList.add('is-closing')
+    searchStarterEl?.setAttribute('aria-label', '검색 열기')
+    basketStarterEl?.setAttribute('aria-label', '장바구니 열기')
+
+    searchStarterEl?.setAttribute('aria-label', '검색 열기')
+    basketStarterEl?.setAttribute('aria-label', '장바구니 열기')
+
+    if (clearSearchInput && searchInputEl) {
       searchInputEl.value = ''
     }
 
+    if (closingType === 'search') {
+      setTransitionDelays(headerMenuEls, { reverse: true })
+      setTransitionDelays(searchDelayEls, { reverse: true })
+    }
+
+    syncSearchResetState()
     clearSearchKeyboardFocusState()
     setSearchOpenMode()
+    setBasketOpenMode()
+    panelOpenedAt = 0
+    lastPanelTriggerEl = null
+    syncGlobalPanelBackdropPosition(closingType)
     syncScrollLock()
+    syncInteractiveStates()
+
+    // Keep the curtain alive just a touch longer than the panel to avoid a visible seam on close.
+    panelVisualStateTimeoutId = window.setTimeout(() => {
+      if (closingPanelType !== closingType) {
+        panelVisualStateTimeoutId = 0
+        return
+      }
+
+      closingPanelEl?.classList.remove('is-active', 'is-closing', 'show')
+      panelBackdropEl?.classList.remove('is-closing')
+      renderedPanelType = null
+      closingPanelType = null
+      syncInteractiveStates()
+      panelVisualStateTimeoutId = 0
+    }, getPanelCloseCleanupDuration())
+
+    if (restoreTargetEl instanceof HTMLElement) {
+      restoreTargetEl.focus()
+    }
   }
 
-  const closeAllNavigationLayers = ({ preserveSearch = false } = {}) => {
-    hideBasket()
+  // Panel switches should tear down the previous flyout immediately so search/basket never overlap.
+  const forceCompleteFlyoutClose = ({ clearSearchInput = true } = {}) => {
+    clearPanelHoverCloseTimer()
+    disarmPanelHoverClose()
+    clearPanelVisualStateTimer()
+    clearSearchFocusTimer()
+    resetPanelVisualStates()
+
+    if (clearSearchInput && searchInputEl) {
+      searchInputEl.value = ''
+    }
+
+    activePanelType = null
+    renderedPanelType = null
+    closingPanelType = null
+    panelOpenedAt = 0
+    lastPanelTriggerEl = null
+    setSearchOpenMode()
+    setBasketOpenMode()
+    syncSearchResetState()
+    clearSearchKeyboardFocusState()
+    syncScrollLock()
+    syncInteractiveStates()
+  }
+
+  const openHeaderFlyout = (type, { mode = 'pointer' } = {}) => {
+    const panelEl = getPanel(type)
+    const triggerEl = getTrigger(type)
+
+    if (!panelEl || !triggerEl) {
+      return
+    }
+
+    if (activePanelType === type) {
+      if (isMobilePanelType(type)) {
+        return
+      }
+
+      debugClose('trigger-toggle', { type })
+      closeGlobalPanel({ reason: 'trigger-toggle', restoreFocus: true })
+      return
+    }
+
+    if (renderedPanelType || closingPanelType) {
+      debugClose('panel-switch', { from: activePanelType, to: type })
+      forceCompleteFlyoutClose({ clearSearchInput: type !== 'search' })
+    }
+
     hideNavMenu()
     closeHeaderMenu()
+    closeMobileSearch()
+    clearPanelHoverCloseTimer()
+    disarmPanelHoverClose()
+    clearPanelVisualStateTimer()
+    resetPanelVisualStates()
+
+    closingPanelType = null
+    renderedPanelType = type
+    activePanelType = type
+    panelOpenedAt = Date.now()
+    lastPanelTriggerEl = triggerEl
+    panelEl.classList.add('is-active')
+    panelEl.classList.add('is-animating')
+    panelBackdropEl?.classList.add('is-animating')
+
+    if (type === 'search') {
+      setSearchOpenMode(mode)
+      setBasketOpenMode()
+      setTransitionDelays(headerMenuEls, { reverse: true })
+      setTransitionDelays(searchDelayEls)
+      clearSearchFocusTimer()
+      clearSearchKeyboardFocusState()
+      syncSearchResetState()
+    } else {
+      setBasketOpenMode(mode)
+      setSearchOpenMode()
+    }
+
+    syncGlobalPanelBackdropPosition(type)
+    syncScrollLock()
+    syncInteractiveStates()
+    window.requestAnimationFrame(() => {
+      panelEl.classList.add('is-open')
+      panelBackdropEl?.classList.add('is-open')
+    })
+    panelVisualStateTimeoutId = window.setTimeout(() => {
+      panelEl.classList.remove('is-animating')
+      panelBackdropEl?.classList.remove('is-animating')
+      panelVisualStateTimeoutId = 0
+    }, getPanelOpenDuration())
+    armPanelHoverClose()
+
+    if (isMobilePanelType(type)) {
+      window.requestAnimationFrame(() => {
+        syncGlobalPanelBackdropPosition(type)
+        focusMobilePanelCloseButton(type)
+      })
+      return
+    }
+
+    if (type === 'search') {
+      searchFocusTimeoutId = window.setTimeout(() => {
+        syncGlobalPanelBackdropPosition(type)
+        focusSearchInput()
+      }, getSearchFocusDelay())
+      return
+    }
+
+    if (mode === 'keyboard') {
+      window.requestAnimationFrame(() => {
+        syncGlobalPanelBackdropPosition(type)
+        const initialFocusEl = isMobileViewport()
+          ? getMobileCloseButton(type) ?? basketMenuLinkEls[0]
+          : basketMenuLinkEls[0]
+        initialFocusEl?.focus()
+      })
+    }
+  }
+
+  const closeGlobalPanel = (options = {}) => {
+    closeHeaderFlyout(options)
+  }
+
+  const openGlobalPanel = (type, options = {}) => {
+    openHeaderFlyout(type, options)
+  }
+
+  const hideBasket = ({ restoreFocus = false } = {}) => {
+    if (activePanelType !== 'basket') {
+      return
+    }
+
+    debugClose('hide-basket', { restoreFocus })
+    closeGlobalPanel({ reason: 'hide-basket', restoreFocus })
+  }
+
+  const showBasket = ({ mode = 'pointer' } = {}) => {
+    openGlobalPanel('basket', { mode })
+  }
+
+  const hideSearch = ({ clearInput = true, restoreFocus = false } = {}) => {
+    if (activePanelType !== 'search') {
+      if (clearInput && searchInputEl) {
+        searchInputEl.value = ''
+        syncSearchResetState()
+      }
+
+      return
+    }
+
+    debugClose('hide-search', { restoreFocus, clearInput })
+    closeGlobalPanel({ reason: 'hide-search', restoreFocus, clearSearchInput: clearInput })
+  }
+
+  const closeAllNavigationLayers = ({ preserveSearch = false, restoreFocus = false } = {}) => {
+    const shouldKeepSearchOpen = preserveSearch && activePanelType === 'search'
+
+    if (!shouldKeepSearchOpen) {
+      const shouldRestorePanelFocus = restoreFocus && Boolean(activePanelType)
+      debugClose('close-all-navigation-layers', { restoreFocus: shouldRestorePanelFocus })
+      closeGlobalPanel({ reason: 'close-all-navigation-layers', restoreFocus: shouldRestorePanelFocus })
+    }
+
+    hideNavMenu()
+    closeHeaderMenu({ restoreFocus: restoreFocus && isKeyboardHeaderMenuSession() })
     closeMobileSearch()
 
     if (preserveSearch) {
       syncScrollLock()
       return
     }
-
-    hideSearch()
   }
 
   const showSearch = ({ mode = 'pointer' } = {}) => {
@@ -585,21 +1294,7 @@ const initHeaderAndNavigation = () => {
       return
     }
 
-    hideBasket()
-    hideNavMenu()
-    closeHeaderMenu()
-    closeMobileSearch()
-    headerEl.classList.add('searching')
-    setTransitionDelays(headerMenuEls, { reverse: true })
-    setTransitionDelays(searchDelayEls)
-    setSearchOpenMode(mode)
-    syncScrollLock()
-    clearSearchFocusTimer()
-    clearSearchKeyboardFocusState()
-
-    searchFocusTimeoutId = window.setTimeout(() => {
-      focusSearchInput()
-    }, SEARCH_CONFIG.focusDelay)
+    openGlobalPanel('search', { mode })
   }
 
   const showNavMenu = () => {
@@ -611,12 +1306,31 @@ const initHeaderAndNavigation = () => {
     syncScrollLock()
   }
 
-  const toggleHeaderMenu = () => {
-    hideBasket()
+  const toggleHeaderMenu = ({ mode = 'pointer' } = {}) => {
+    if (isMobileViewport() && (activePanelType || headerEl.classList.contains('is-mobile-menu-closing'))) {
+      return
+    }
+
+    if (headerEl.classList.contains('searching--mobile')) {
+      closeMobileSearch()
+      closeHeaderMenu()
+      syncScrollLock()
+      return
+    }
+
+    if (activePanelType) {
+      debugClose('header-menu-toggle', { restoreFocus: true })
+      closeGlobalPanel({ reason: 'header-menu-toggle', restoreFocus: true })
+      return
+    }
     hideNavMenu()
     closeMobileSearch()
 
     if (headerEl.classList.contains('menuing')) {
+      if (isMobileViewport()) {
+        return
+      }
+
       closeHeaderMenu()
 
       if (searchInputEl) {
@@ -624,10 +1338,21 @@ const initHeaderAndNavigation = () => {
       }
     } else {
       hideSearch()
+      clearMobileMenuCloseTimer()
+      headerEl.classList.remove('is-mobile-menu-closing')
+      cloneMenuEl?.classList.remove('is-closing')
+      cloneMenuEl?.classList.add('is-open')
       headerEl.classList.add('menuing')
+      setHeaderMenuOpenMode(mode)
     }
 
     syncScrollLock()
+
+    if (isMobileViewport() && headerEl.classList.contains('menuing')) {
+      window.requestAnimationFrame(() => {
+        focusMobilePanelCloseButton('menu')
+      })
+    }
   }
 
   const openMobileSearch = () => {
@@ -635,16 +1360,19 @@ const initHeaderAndNavigation = () => {
       return
     }
 
-    hideBasket()
-    hideNavMenu()
-    headerEl.classList.add('menuing', 'searching--mobile')
-    syncScrollLock()
-    clearSearchKeyboardFocusState()
-    focusSearchInput()
+    openGlobalPanel('search', { mode: 'pointer' })
   }
 
   const handleSearchWrapFocusOut = (event) => {
-    if (!isKeyboardSearchSession()) {
+    if (isMobileViewport()) {
+      return
+    }
+
+    if (activePanelType !== 'search' || !isKeyboardSearchSession()) {
+      return
+    }
+
+    if (isAutoCloseGuardActive()) {
       return
     }
 
@@ -659,20 +1387,34 @@ const initHeaderAndNavigation = () => {
         return
       }
 
-      hideSearch()
+      debugClose('focusout', { panel: 'search' })
+      closeGlobalPanel({ reason: 'focusout' })
     })
   }
 
-  const handleSearchScrollClose = () => {
-    if (!isPointerSearchSession()) {
+  const handleGlobalPanelMotionClose = (reason = 'scroll') => {
+    if (isMobileViewport()) {
       return
     }
 
-    hideSearch()
+    if (!activePanelType || isAutoCloseGuardActive()) {
+      return
+    }
+
+    debugClose(reason)
+    closeGlobalPanel({ reason })
   }
 
   const handleBasketWrapFocusOut = (event) => {
-    if (!isKeyboardBasketSession()) {
+    if (isMobileViewport()) {
+      return
+    }
+
+    if (activePanelType !== 'basket' || !isKeyboardBasketSession()) {
+      return
+    }
+
+    if (isAutoCloseGuardActive()) {
       return
     }
 
@@ -687,16 +1429,56 @@ const initHeaderAndNavigation = () => {
         return
       }
 
-      hideBasket()
+      debugClose('focusout', { panel: 'basket' })
+      closeGlobalPanel({ reason: 'focusout' })
     })
   }
 
-  const handleBasketScrollClose = () => {
-    if (!basketEl?.classList.contains('show')) {
+  const scheduleDesktopCurtainClose = () => {
+    if (
+      !activePanelType ||
+      !isDesktopPointerEnvironment() ||
+      !isPanelHoverCloseArmed ||
+      isAutoCloseGuardActive()
+    ) {
       return
     }
 
-    hideBasket()
+    clearPanelHoverCloseTimer()
+    panelHoverCloseTimer = window.setTimeout(() => {
+      if (!activePanelType) {
+        return
+      }
+
+      debugClose('curtain-hover-close', { panel: activePanelType })
+      closeGlobalPanel({ reason: 'curtain-hover-close' })
+    }, 150)
+  }
+
+  const handleDesktopNavHoverClose = (event) => {
+    if (!activePanelType || !isDesktopPointerEnvironment() || isAutoCloseGuardActive()) {
+      return
+    }
+
+    const hoveredItemEl = event.target.closest('ul.menu > li')
+    const activeTriggerItemEl = getTriggerListItem()
+
+    if (!hoveredItemEl || !globalMenuListEl?.contains(hoveredItemEl)) {
+      return
+    }
+
+    if (!activeTriggerItemEl || hoveredItemEl === activeTriggerItemEl) {
+      clearPanelHoverCloseTimer()
+      return
+    }
+
+    clearPanelHoverCloseTimer()
+    panelHoverCloseTimer = window.setTimeout(() => {
+      if (activePanelType && hoveredItemEl !== getTriggerListItem()) {
+        debugClose('nav-hover-close', { hoveredItem: hoveredItemEl.className || hoveredItemEl.textContent?.trim() || 'nav-item' })
+        closeGlobalPanel({ reason: 'nav-hover-close' })
+      }
+    }, 90)
   }
 
   /* 최근 입력 수단 추적
@@ -728,61 +1510,119 @@ const initHeaderAndNavigation = () => {
   window.addEventListener('mousedown', clearKeyboardInteraction)
   window.addEventListener('pointerdown', clearKeyboardInteraction)
   window.addEventListener('touchstart', clearKeyboardInteraction, { passive: true })
-  window.addEventListener('scroll', handleSearchScrollClose, { passive: true })
-  window.addEventListener('scroll', handleBasketScrollClose, { passive: true })
+  window.addEventListener('scroll', () => handleGlobalPanelMotionClose('scroll'), { passive: true })
+  window.addEventListener('wheel', () => handleGlobalPanelMotionClose('wheel'), { passive: true })
+  window.addEventListener('touchmove', () => handleGlobalPanelMotionClose('touchmove'), { passive: true })
   window.addEventListener('scroll', () => {
     syncBrowserTopOffset()
     queueHeaderRevealSync()
   }, { passive: true })
 
-  window.visualViewport?.addEventListener('resize', syncBrowserTopOffset)
-  window.visualViewport?.addEventListener('scroll', syncBrowserTopOffset)
+  window.visualViewport?.addEventListener('resize', () => {
+    syncBrowserTopOffset()
+    syncBasketPanelHeight()
+    syncGlobalPanelBackdropPosition()
+  })
+  window.visualViewport?.addEventListener('scroll', () => {
+    syncBrowserTopOffset()
+    syncGlobalPanelBackdropPosition()
+  })
 
   searchInputEl?.addEventListener('focus', () => {
     applySearchKeyboardFocusState()
+  })
+
+  searchInputEl?.addEventListener('input', () => {
+    syncSearchResetState()
   })
 
   searchInputEl?.addEventListener('blur', () => {
     clearSearchKeyboardFocusState()
   })
 
-  basketStarterEl?.addEventListener('click', (event) => {
+  searchResetEl?.addEventListener('click', (event) => {
     event.stopPropagation()
-    basketEl?.classList.contains('show')
-      ? hideBasket()
-      : showBasket({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
-  })
 
-  basketEl?.addEventListener('click', (event) => {
-    event.stopPropagation()
+    if (!searchInputEl) {
+      return
+    }
+
+    searchInputEl.value = ''
+    syncSearchResetState()
+    focusSearchInput()
   })
 
   basketWrapEl?.addEventListener('focusout', handleBasketWrapFocusOut)
 
-  searchStarterEl?.addEventListener('click', (event) => {
-    event.stopPropagation()
-    showSearch({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
+  panelTriggerEls.forEach((triggerEl) => {
+    triggerEl.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (isMobileViewport() && (activePanelType || headerEl.classList.contains('menuing') || headerEl.classList.contains('is-mobile-menu-closing'))) {
+        return
+      }
+
+      if (isPanelVisualTransitioning()) {
+        return
+      }
+
+      openGlobalPanel(triggerEl.dataset.panelTrigger, {
+        mode: isKeyboardInteraction ? 'keyboard' : 'pointer'
+      })
+    })
   })
 
-  searchCloserEl?.addEventListener('click', (event) => {
+  headerEl.addEventListener('click', (event) => {
     event.stopPropagation()
-    hideSearch()
   })
+
+  globalMenuListEl?.addEventListener('pointerover', handleDesktopNavHoverClose)
 
   searchWrapEl?.addEventListener('click', (event) => {
     event.stopPropagation()
   })
+  basketEl?.addEventListener('click', (event) => {
+    event.stopPropagation()
+  })
+
+  searchWrapEl?.addEventListener('pointerenter', clearPanelHoverCloseTimer)
+  basketEl?.addEventListener('pointerenter', clearPanelHoverCloseTimer)
 
   searchWrapEl?.addEventListener('focusout', handleSearchWrapFocusOut)
+  panelBackdropEl?.addEventListener('click', () => {
+    if (isMobileViewport()) {
+      return
+    }
 
-  searchShadowEl?.addEventListener('click', () => {
-    hideSearch()
+    if (isAutoCloseGuardActive()) {
+      return
+    }
+
+    debugClose('curtain-click')
+    closeGlobalPanel({ reason: 'curtain-click' })
+  })
+  panelBackdropEl?.addEventListener('pointerenter', scheduleDesktopCurtainClose)
+  panelBackdropEl?.addEventListener('pointerleave', clearPanelHoverCloseTimer)
+
+  ;[
+    ['menu', cloneMenuEl],
+    ['search', searchWrapEl],
+    ['basket', basketEl]
+  ].forEach(([type, panelEl]) => {
+    panelEl?.addEventListener('keydown', (event) => {
+      trapMobilePanelFocus(type, event)
+    })
   })
 
   searchQuickLinkEls.forEach((element, index) => {
     const isLastQuickLink = index === searchQuickLinkEls.length - 1
 
     element.addEventListener('keydown', (event) => {
+      if (isMobileViewport()) {
+        return
+      }
+
       if (
         !isKeyboardSearchSession() ||
         !isLastQuickLink ||
@@ -793,8 +1633,11 @@ const initHeaderAndNavigation = () => {
       }
 
       event.preventDefault()
-      hideSearch()
-      basketStarterEl?.focus()
+      const nextFocusableEl = getNextFocusableElement(element)
+
+      debugClose('search-last-tab')
+      closeGlobalPanel({ reason: 'search-last-tab' })
+      nextFocusableEl?.focus()
     })
   })
 
@@ -802,6 +1645,10 @@ const initHeaderAndNavigation = () => {
     const isLastBasketLink = index === basketMenuLinkEls.length - 1
 
     element.addEventListener('keydown', (event) => {
+      if (isMobileViewport()) {
+        return
+      }
+
       if (
         !isKeyboardBasketSession() ||
         !isLastBasketLink ||
@@ -815,18 +1662,84 @@ const initHeaderAndNavigation = () => {
 
       const nextFocusableEl = getNextFocusableElement(element)
 
+      debugClose('basket-last-tab')
       hideBasket()
       nextFocusableEl?.focus()
     })
   })
 
+  cloneMenuLinkEls.forEach((element, index) => {
+    const isLastCloneMenuLink = index === cloneMenuLinkEls.length - 1
+
+    element.addEventListener('keydown', (event) => {
+      if (isMobileViewport()) {
+        return
+      }
+
+      if (!isKeyboardHeaderMenuSession() || event.key !== 'Tab') {
+        return
+      }
+
+      if (!event.shiftKey && isLastCloneMenuLink) {
+        event.preventDefault()
+        const nextFocusableEl = getNextFocusableElement(element)
+
+        closeHeaderMenu()
+        nextFocusableEl?.focus()
+      }
+    })
+  })
+
+  mobilePanelCloseEls.forEach((element) => {
+    element.addEventListener('click', (event) => {
+      event.stopPropagation()
+
+      const { mobilePanelClose } = element.dataset
+
+      if (mobilePanelClose === 'menu') {
+        closeHeaderMenu({ restoreFocus: true })
+        syncScrollLock()
+        return
+      }
+
+      if (mobilePanelClose && activePanelType === mobilePanelClose) {
+        debugClose('mobile-panel-close', { panel: mobilePanelClose, restoreFocus: true })
+        closeGlobalPanel({ reason: 'mobile-panel-close', restoreFocus: true })
+      }
+    })
+
+    element.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab' || !event.shiftKey) {
+        return
+      }
+
+      const { mobilePanelClose } = element.dataset
+
+      if (isMobileViewport() && mobilePanelClose) {
+        trapMobilePanelFocus(mobilePanelClose, event)
+        return
+      }
+
+      if (mobilePanelClose === 'menu' && isKeyboardHeaderMenuSession()) {
+        event.preventDefault()
+        closeHeaderMenu({ restoreFocus: true })
+        return
+      }
+
+      if (mobilePanelClose === activePanelType) {
+        event.preventDefault()
+        closeGlobalPanel({ reason: 'mobile-panel-shift-tab', restoreFocus: true })
+      }
+    })
+  })
+
   menuStarterEl?.addEventListener('click', (event) => {
     event.stopPropagation()
-    toggleHeaderMenu()
+    toggleHeaderMenu({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
   })
 
   searchTextFieldEl?.addEventListener('click', (event) => {
-    if (!isMobileViewport()) {
+    if (!isMobileViewport() || headerEl.classList.contains('searching')) {
       return
     }
 
@@ -852,17 +1765,29 @@ const initHeaderAndNavigation = () => {
   navMenuShadowEl?.addEventListener('click', hideNavMenu)
 
   window.addEventListener('click', () => {
+    if (activePanelType || getActiveMobileFlyoutType() || headerEl.classList.contains('is-mobile-menu-closing')) {
+      return
+    }
+
     closeAllNavigationLayers()
   })
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      closeAllNavigationLayers()
+      if (activePanelType) {
+        debugClose('escape', { restoreFocus: true })
+        closeGlobalPanel({ reason: 'escape', restoreFocus: true })
+        return
+      }
+
+      closeAllNavigationLayers({ restoreFocus: true })
     }
   })
 
   window.addEventListener('resize', () => {
     syncBrowserTopOffset()
+    syncBasketPanelHeight()
+    syncGlobalPanelBackdropPosition()
 
     if (isMobileViewport()) {
       headerEl.classList.remove('searching')
@@ -883,17 +1808,24 @@ const initHeaderAndNavigation = () => {
   )
 
   syncBrowserTopOffset()
+  syncBasketPanelHeight()
+  syncGlobalPanelBackdropPosition()
+  syncSearchResetState()
   syncInteractiveStates()
   initializeHeaderRevealState()
 
   // Browsers may restore scroll position after initial script execution.
   window.requestAnimationFrame(() => {
     syncBrowserTopOffset()
+    syncBasketPanelHeight()
+    syncGlobalPanelBackdropPosition()
     initializeHeaderRevealState()
   })
 
   window.addEventListener('pageshow', () => {
     syncBrowserTopOffset()
+    syncBasketPanelHeight()
+    syncGlobalPanelBackdropPosition()
     initializeHeaderRevealState()
   })
 }
