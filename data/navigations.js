@@ -2,7 +2,7 @@ export default [
   {
     title: '쇼핑 및 알아보기',
     maps: [
-      { name: '스토어', url: '/shop/goto/store' },
+      { name: '스토어', url: '/store' },
       { name: 'Mac', url: '/mac' },
       { name: 'iPad', url: '/ipad' },
       { name: 'iPhone', url: '/iphone' },
@@ -10,7 +10,7 @@ export default [
       { name: 'AirPods', url: '/airpods' },
       { name: 'TV 및 홈', url: '/tv-home' },
       { name: 'AirTag', url: '/airtag' },
-      { name: '액세서리', url: '/shop/goto/buy_accessories' }
+      { name: '액세서리', url: '/accessories' }
     ]
   },
   {
@@ -23,9 +23,9 @@ export default [
   {
     title: '계정',
     maps: [
-      { name: 'Apple ID 관리', url: 'https://appleid.apple.com' },
-      { name: 'Apple Store 계정', url: '/shop/goto/account' },
-      { name: 'iCloud.com', url: 'https://www.icloud.com' }
+      { name: 'Apple ID 관리', url: '/apple-id' },
+      { name: 'Apple Store 계정', url: '/account' },
+      { name: 'iCloud.com', url: '/icloud' }
     ]
   },
   {
@@ -47,12 +47,12 @@ export default [
       { name: 'Genius Bar', url: '/retail/geniusbar' },
       { name: 'Today at Apple', url: '/today' },
       { name: 'Apple 캠프', url: '/today/camp' },
-      { name: 'Apple Store 앱', url: 'https://apps.apple.com/app/apple-store/id375380948' },
-      { name: '리퍼 및 특가 제품', url: '/shop/goto/special_deals' },
-      { name: '금융 혜택', url: '/shop/goto/financing' },
+      { name: 'Apple Store 앱', url: '/app-store' },
+      { name: '리퍼 및 특가 제품', url: '/shop/special-deals' },
+      { name: '금융 혜택', url: '/financing' },
       { name: 'Apple Trade In', url: '/trade-in' },
-      { name: '주문 상태', url: '/shop/goto/order/list' },
-      { name: '쇼핑 지원', url: '/shop/goto/help' }
+      { name: '주문 상태', url: '/orders' },
+      { name: '쇼핑 지원', url: '/support' }
     ]
   },
   {
@@ -67,15 +67,15 @@ export default [
     maps: [
       { name: 'Apple과 교육', url: '/education' },
       { name: '초중고용 제품 쇼핑하기', url: '/education/k12/how-to-buy' },
-      { name: '대학생을 위한 제품 쇼핑하기', url: '/shop/goto/educationrouting' }
+      { name: '대학생을 위한 제품 쇼핑하기', url: '/education-routing' }
     ]
   },
   {
     title: 'Apple의 가치관',
     maps: [
-      { name: '손쉬운 사용', url: '/accessibility' },
-      { name: '환경', url: '/environment' },
-      { name: '개인정보 보호', url: '/privacy' },
+      { name: '손쉬운 사용', url: '/learn/accessibility' },
+      { name: '환경', url: '/learn/environment' },
+      { name: '개인정보 보호', url: '/learn/privacy' },
       { name: '협력업체에 대한 책임', url: '/supplier-responsibility' }
     ]
   },

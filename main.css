@@ -732,31 +732,6 @@ header .search .search-icon {
   pointer-events: none;
 }
 
-header .header-search-field__close,
-header .search .search-closer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 32px;
-  height: 52px;
-  border: 0;
-  background: url(/images/header_close.svg) no-repeat center;
-  filter: brightness(0) saturate(100%);
-  opacity: .72;
-  cursor: pointer;
-  transition: opacity .2s ease;
-}
-
-header .header-search-field__close:hover,
-header .search .search-closer:hover {
-  opacity: 1;
-}
-
-header .header-search-field__close,
-header .search .search-closer {
-  display: none;
-}
-
 header .header-search-field__reset,
 header .search .search-reset {
   position: absolute;
@@ -1578,7 +1553,6 @@ header:not(.is-scroll-hidden) {
     background: transparent;
   }
 
-  header .search .search-closer,
   header .search .search-canceler {
     display: none;
   }
@@ -1614,8 +1588,7 @@ header:not(.is-scroll-hidden) {
     font-size: 18px;
   }
 
-  header .search .search-icon,
-  header .search .search-closer {
+  header .search .search-icon {
     width: 24px;
     height: 56px;
     opacity: .72;
@@ -3449,6 +3422,115 @@ main {
   }
 }
 
+/* 404 */
+.page-404 main {
+  padding-top: var(--header-height);
+}
+
+.not-found {
+  padding: 32px 20px 0;
+  background-color: var(--color-section);
+}
+
+.not-found .whitebox {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0;
+  background: #fff;
+}
+
+.not-found__inner {
+  padding: 88px 72px 96px;
+  text-align: left;
+}
+
+.not-found__eyebrow {
+  margin-bottom: 14px;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: #6e6e73;
+}
+
+.not-found h1 {
+  max-width: 12ch;
+  margin-bottom: 18px;
+  font-size: 48px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.not-found__description {
+  max-width: 620px;
+  color: #6e6e73;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.not-found__actions {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 24px;
+}
+
+.not-found__actions .btn {
+  margin: 0;
+}
+
+.not-found__help {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-border);
+}
+
+.not-found__help h2 {
+  margin-bottom: 16px;
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.not-found__links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 28px;
+}
+
+.not-found__links a {
+  color: var(--color-link);
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.not-found__links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 740px) {
+  .not-found {
+    padding-top: 20px;
+  }
+
+  .not-found__inner {
+    padding: 56px 28px 64px;
+  }
+
+  .not-found h1 {
+    font-size: 34px;
+  }
+
+  .not-found__description {
+    font-size: 17px;
+  }
+
+  .not-found__links {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Footer */
 footer {
   background-color: var(--color-section);
@@ -3497,18 +3579,22 @@ footer .warning li {
 }
 /* Footer / Breadcrumbs */
 footer .breadcrumbs {
+  margin: 20px 0;
+}
+footer .breadcrumbs ol {
   display: flex;
   align-items: center;
   gap: 30px;
-  margin: 20px 0;
+}
+footer .breadcrumbs li {
   position: relative;
 }
-footer .breadcrumbs a {
+footer .breadcrumbs :is(a, span) {
   font-size: 12px;
   color: var(--color-font-darkgray);
-  position: relative;
 }
 footer .breadcrumbs a.apple-logo {
+  display: block;
   width: 16px;
   height: 16px;
   background-image: url("/images/path_apple.svg");
@@ -3516,7 +3602,7 @@ footer .breadcrumbs a.apple-logo {
 footer .breadcrumbs a:hover {
   text-decoration: underline;
 }
-footer .breadcrumbs a::after {
+footer .breadcrumbs li::after {
   content: "";
   position: absolute;
   top: 0;
@@ -3527,7 +3613,7 @@ footer .breadcrumbs a::after {
   height: 18px;
   background-image: url("/images/path_div.svg");
 }
-footer .breadcrumbs a:last-child:after {
+footer .breadcrumbs li:last-child::after {
   display: none;
 }
 /* Footer / Navigations */
@@ -3592,6 +3678,9 @@ footer .legal {
   gap: 50px;
   font-size: 12px;
   color: var(--color-font-darkgray);
+}
+footer .legal .legal-links {
+  flex-grow: 1;
 }
 footer .legal ul {
   flex-grow: 1;

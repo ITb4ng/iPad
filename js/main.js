@@ -34,7 +34,38 @@ const HEADER_REVEAL_CONFIG = Object.freeze({
 
 const DEBUG = false
 
-const APPLE_BASE_URL = 'https://www.apple.com/kr'
+const PROJECT_ROUTE_ALIASES = Object.freeze({
+  '/shop/buy-ipad': '/buy',
+  '/shop/ipad/ipad-accessories': '/shop/accessories',
+  '/shop/accessories/all': '/accessories',
+  '/shop/trade-in': '/trade-in',
+  '/shop/account/home': '/account',
+  '/shop/order/list': '/orders',
+  '/shop/browse/open/salespolicies': '/legal/sales',
+  '/shop/goto/store': '/store',
+  '/shop/goto/buy_accessories': '/accessories',
+  '/shop/goto/account': '/account',
+  '/shop/goto/special_deals': '/shop/special-deals',
+  '/shop/goto/financing': '/financing',
+  '/shop/goto/order/list': '/orders',
+  '/shop/goto/help': '/support',
+  '/ipad/compare': '/compare',
+  '/ipad/cellular': '/learn/cellular',
+  '/apple-pencil': '/learn/apple-pencil',
+  '/ipad-keyboards': '/learn/keyboards',
+  '/ipados': '/learn/ipados',
+  '/app-store': '/learn/app-store',
+  '/privacy': '/learn/privacy',
+  '/accessibility': '/learn/accessibility',
+  '/environment': '/learn/environment',
+  '/apple-intelligence': '/learn/apple-intelligence',
+  '/apple-vision-pro': '/learn/vision-pro',
+  '/ios/feature-availability': '/support/feature-availability',
+  '/legal/privacy': '/legal/privacy',
+  '/legal/internet-services/terms/site.html': '/legal/terms',
+  '/sitemap': '/sitemap'
+})
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -167,16 +198,83 @@ const getNextFocusableElement = (currentElement) => {
   return focusableEls[currentIndex + 1] ?? null
 }
 
-const toAbsoluteAppleUrl = (url) => {
+const normalizeProjectPath = (path) => {
+  if (!path) {
+    return '/'
+  }
+
+  const sanitizedPath =
+    path.length > 1 ? path.replace(/\/+$/, '') || '/' : path
+
+  return PROJECT_ROUTE_ALIASES[sanitizedPath] ?? sanitizedPath
+}
+
+const toProjectUrl = (url) => {
   if (!url) {
     return '#'
   }
 
-  if (/^https?:\/\//.test(url)) {
+  if (/^(#|tel:|mailto:)/.test(url)) {
     return url
   }
 
-  return `${APPLE_BASE_URL}${url}`
+  if (url.startsWith('/kr/')) {
+    return normalizeProjectPath(url.replace(/^\/kr/, '') || '/')
+  }
+
+  if (/^https?:\/\//.test(url)) {
+    try {
+      const parsedUrl = new URL(url)
+      const host = parsedUrl.hostname.replace(/^www\./, '')
+
+      if (host === 'appleid.apple.com') {
+        return '/apple-id'
+      }
+
+      if (host === 'icloud.com') {
+        return '/icloud'
+      }
+
+      if (host === 'locate.apple.com') {
+        return '/reseller'
+      }
+
+      let nextPathname = parsedUrl.pathname || '/'
+
+      if (host === 'support.apple.com') {
+        nextPathname = nextPathname.replace(/^\/ko-kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname === '/' ? '/support' : `/support${nextPathname}`)
+      }
+
+      if (host === 'apps.apple.com') {
+        nextPathname = nextPathname.replace(/^\/kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname === '/' ? '/app-store' : nextPathname)
+      }
+
+      if (host === 'apple.com') {
+        nextPathname = nextPathname.replace(/^\/kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname)
+      }
+    } catch (error) {
+      return url
+    }
+  }
+
+  return url.startsWith('/') ? normalizeProjectPath(url) : url
+}
+
+const normalizeProjectAnchors = (root = document) => {
+  const linkEls = [...root.querySelectorAll('a[href]')]
+
+  linkEls.forEach((linkEl) => {
+    const href = linkEl.getAttribute('href')
+
+    if (!href) {
+      return
+    }
+
+    linkEl.setAttribute('href', toProjectUrl(href))
+  })
 }
 
 const setExpandedState = (element, isExpanded) => {
@@ -241,7 +339,6 @@ const initHeaderAndNavigation = () => {
   const searchWrapEl = headerEl.querySelector('.search-wrap')
   const searchPanelEl = searchWrapEl?.querySelector('.search')
   const searchStarterEl = headerEl.querySelector('.search-starter > button')
-  const searchCloserEl = searchWrapEl?.querySelector('.search-closer')
   const searchMobileCloseEl = searchWrapEl?.querySelector('[data-mobile-panel-close="search"]')
   const searchResetEl = searchWrapEl?.querySelector('.search-reset')
   const searchInputEl = searchWrapEl?.querySelector('input')
@@ -2234,8 +2331,8 @@ const renderCompareSection = () => {
       <h3 class="name">${ipad.name}</h3>
       <p class="tagline">${ipad.tagline}</p>
       <p class="price">₩${ipad.price.toLocaleString('ko-KR')}&nbsp;부터</p>
-      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="btn" aria-label="${ipad.name} 구입하기">구입하기</a>
-      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="link" aria-label="${ipad.name} 더 알아보기">더 알아보기</a>
+      <a href="${toProjectUrl(ipad.url)}" class="btn" aria-label="${ipad.name} 구입하기">구입하기</a>
+      <a href="${toProjectUrl(ipad.url)}" class="link" aria-label="${ipad.name} 더 알아보기">더 알아보기</a>
     `
 
     itemsEl.append(itemEl)
@@ -2250,13 +2347,13 @@ const initFooterNavigation = () => {
     navigationsEl.innerHTML = ''
 
     navigations.forEach((navigation, index) => {
-      const mapEl = document.createElement('div')
+      const mapEl = document.createElement('section')
       const listId = `footer-navigation-list-${index + 1}`
       const mapList = navigation.maps
         .map(
           (map) => /* html */ `
             <li>
-              <a href="${toAbsoluteAppleUrl(map.url)}">${map.name}</a>
+              <a href="${toProjectUrl(map.url)}">${map.name}</a>
             </li>
           `
         )
@@ -2463,10 +2560,12 @@ const initHeroIntro = () => {
   window.addEventListener('resize', syncHeroMotionVars)
 }
 
+normalizeProjectAnchors()
 initHeaderAndNavigation()
 initIntersectionReveal()
 initStageVideoControls()
 renderCompareSection()
 initFooterNavigation()
 initHeroIntro()
+normalizeProjectAnchors()
 
