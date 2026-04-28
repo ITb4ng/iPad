@@ -40,14 +40,6 @@
       
       <!-- 데스크탑 메뉴 -->
       <ul class="menu">
-        <li class="menu-starter">
-          <button type="button" aria-label="전역 메뉴 열기" aria-controls="global-mobile-menu" aria-expanded="false">
-            <div aria-hidden="true">
-              <span></span>
-              <span></span>
-            </div>
-          </button>
-        </li>
         <li class="apple-logo"><a href="./index.html">Apple</a></li>
         <li><a href="https://www.apple.com/kr/store">스토어</a></li>
         <li><a href="https://www.apple.com/kr/mac/">Mac</a></li>
@@ -60,10 +52,18 @@
         <li><a href="https://www.apple.com/kr/shop/accessories/all">액세서리</a></li>
         <li><a href="https://support.apple.com/ko-kr">고객지원</a></li>
         <li class="search-starter">
-          <button type="button" data-panel-trigger="search" aria-label="검색 열기" aria-controls="header-search-flyout" aria-expanded="false">검색</button>
+          <button type="button" data-panel-trigger="search" aria-label="검색 메뉴 열기" aria-controls="header-search-flyout" aria-expanded="false" aria-haspopup="dialog">검색</button>
         </li>
         <li class="basket-starter">
-          <button type="button" data-panel-trigger="basket" aria-label="장바구니 열기" aria-controls="header-basket-flyout" aria-expanded="false" aria-haspopup="true">장바구니</button>
+          <button type="button" data-panel-trigger="basket" aria-label="장바구니 메뉴 열기" aria-controls="header-basket-flyout" aria-expanded="false" aria-haspopup="dialog">장바구니</button>
+        </li>
+        <li class="menu-starter">
+          <button type="button" aria-label="전역메뉴 열기" aria-controls="global-mobile-menu" aria-expanded="false" aria-haspopup="dialog">
+            <div aria-hidden="true">
+              <span></span>
+              <span></span>
+            </div>
+          </button>
         </li>
       </ul>
 
@@ -80,7 +80,7 @@
               <div class="search inner header-flyout-panel__inner header-flyout-panel__content global-mobile-panel__shell">
                 <div class="global-mobile-panel__bar">
                   <h2 class="sr-only" id="header-search-mobile-title">검색</h2>
-                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="search" aria-label="검색 닫기"></button>
+                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="search" aria-label="검색 메뉴 닫기"></button>
                 </div>
                 <div class="global-mobile-panel__body global-mobile-panel__body--search">
                   <form class="header-search-form mobile-panel-item" role="search" aria-label="apple.com 검색하기" style="--mobile-panel-item-index: 0">
@@ -153,7 +153,7 @@
             <div class="header-flyout-panel__scroll global-mobile-panel__scroll">
               <div class="inner basket-panel-inner header-flyout-panel__inner header-flyout-panel__content global-mobile-panel__shell">
                 <div class="global-mobile-panel__bar">
-                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="basket" aria-label="장바구니 닫기"></button>
+                  <button type="button" class="global-mobile-panel__close mobile-panel-close" data-mobile-panel-close="basket" aria-label="장바구니 메뉴 닫기"></button>
                 </div>
                 <div class="global-mobile-panel__body global-mobile-panel__body--basket">
                   <h2 class="sr-only" id="basket-menu-title">장바구니 빠른 메뉴</h2>
@@ -181,7 +181,7 @@
           <div class="global-mobile-panel__shell global-mobile-panel__shell--menu">
             <div class="global-mobile-panel__bar">
               <h2 class="sr-only" id="global-mobile-menu-title">전역 메뉴 링크</h2>
-              <button type="button" class="global-mobile-panel__close mobile-panel-close mobile-menu-close" data-mobile-panel-close="menu" aria-label="전역 메뉴 닫기"></button>
+              <button type="button" class="global-mobile-panel__close mobile-panel-close mobile-menu-close" data-mobile-panel-close="menu" aria-label="전역메뉴 닫기"></button>
             </div>
             <div class="global-mobile-panel__body global-mobile-panel__body--menu">
               <ul>

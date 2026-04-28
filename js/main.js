@@ -1,4 +1,4 @@
-import ipads from '../data/ipads.js'
+﻿import ipads from '../data/ipads.js'
 import navigations from '../data/navigations.js'
 
 const BREAKPOINTS = Object.freeze({
@@ -32,6 +32,8 @@ const HEADER_REVEAL_CONFIG = Object.freeze({
   transitionDuration: 360
 })
 
+const DEBUG = false
+
 const APPLE_BASE_URL = 'https://www.apple.com/kr'
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -44,9 +46,9 @@ const FOCUSABLE_SELECTOR = [
 
 const HERO_COPY = Object.freeze({
   words: ['쓰다.', '그리다.', '빠져들다.'],
-  subhead: '전면적으로 즐거운 iPad.',
+  subhead: '화면 전체로 즐거운 iPad.',
   description:
-    '이제 초고속 A16 칩 탑재. 그 어느 때보다 넉넉한 저장 용량. 시선을 사로잡는 Liquid Retina 디스플레이와 전면 화면 디자인까지.',
+    '이제 초고속 A16 칩 탑재. 그 어느 때보다 다재다능한 성능. 시선을 사로잡는 Liquid Retina 디스플레이는 화면 가장자리까지 아름답습니다.',
   highlights: ['27.6cm Liquid Retina 디스플레이', 'A16 칩', '128GB부터 시작'],
   links: ['iPad 11 구입하기', 'AR로 iPad 보기'],
   hardwareAlt: '블루, 핑크, 옐로, 실버 색상의 iPad와 Magic Keyboard Folio',
@@ -127,6 +129,12 @@ const syncBrowserTopOffset = () => {
 const isFocusableElementVisible = (element) => {
   if (!(element instanceof HTMLElement)) {
     return false
+  }
+
+  for (let currentEl = element; currentEl instanceof HTMLElement; currentEl = currentEl.parentElement) {
+    if (currentEl.inert || currentEl.getAttribute('aria-hidden') === 'true') {
+      return false
+    }
   }
 
   if (element.hidden || element.closest('[hidden]')) {
@@ -252,6 +260,21 @@ const initHeaderAndNavigation = () => {
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
   const navMenuEl = navEl.querySelector('#product-nav-menu')
+  const skipLinkEl = document.querySelector('.skip-link')
+  const mainEl = document.querySelector('main')
+  const footerEl = document.querySelector('footer')
+  const appContentEls = [skipLinkEl, navEl, mainEl, footerEl].filter(Boolean)
+  const headerFocusGuardEls = [globalMenuListEl, flyoutRootEl, cloneMenuEl].filter(Boolean)
+  const MOBILE_TRIGGER_LABELS = Object.freeze({
+    search: { open: '검색 메뉴 열기', close: '검색 메뉴 닫기' },
+    basket: { open: '장바구니 메뉴 열기', close: '장바구니 메뉴 닫기' },
+    menu: { open: '전역메뉴 열기', close: '전역메뉴 닫기' }
+  })
+  const MOBILE_CLOSE_LABELS = Object.freeze({
+    search: '검색 메뉴 닫기',
+    basket: '장바구니 메뉴 닫기',
+    menu: '전역메뉴 닫기'
+  })
 
   let scrollLockY = 0
   let searchFocusTimeoutId = 0
@@ -275,11 +298,17 @@ const initHeaderAndNavigation = () => {
   let isHeaderVisible = true
   let lastScrollDirection = 0
   let scrollIdleTimeoutId = 0
+  let mobilePanelFocusTimeoutId = 0
+  let mobilePanelFocusRetryTimeoutId = 0
+  let mobilePanelFinalFocusTimeoutId = 0
+  let mobilePanelFocusRingTimeoutId = 0
+  let pendingFocusReturnTimeoutId = 0
+  let lastInitialFocusedMobileFlyoutType = null
 
   /* ==========================================================================
      Search focus modality state
-     - 최근 입력 수단이 키보드인지, 마우스/터치인지 추적
-     - 키보드로 검색창에 진입했을 때만 .is-keyboard-focus 클래스 부여
+     - 理쒓렐 ?낅젰 ?섎떒???ㅻ낫?쒖씤吏, 留덉슦???곗튂?몄? 異붿쟻
+     - ?ㅻ낫?쒕줈 寃?됱갹??吏꾩엯?덉쓣 ?뚮쭔 .is-keyboard-focus ?대옒??遺??
      ========================================================================== */
   let isKeyboardInteraction = false
 
@@ -396,7 +425,47 @@ const initHeaderAndNavigation = () => {
     return null
   }
 
+  const debugFocusState = (label, type) => {
+    if (!DEBUG) {
+      return
+    }
+
+    const closeButtonEl = getMobileCloseButton(type)
+
+    console.log('[mobile-panel-focus]', {
+      label,
+      type,
+      activeElement: document.activeElement,
+      closeButton: closeButtonEl,
+      isActiveCloseButton: document.activeElement === closeButtonEl,
+      mobileFlyoutType: bodyEl?.dataset.mobileFlyout ?? null,
+      closeInsideHidden: closeButtonEl?.closest('[hidden]') ?? null,
+      closeInsideAriaHidden: closeButtonEl?.closest('[aria-hidden="true"]') ?? null,
+      closeInsideInert: closeButtonEl?.closest('[inert]') ?? null
+    })
+  }
+
+  const getMobilePanelTrigger = (type) => {
+    if (type === 'menu') {
+      return menuStarterEl ?? null
+    }
+
+    return getTrigger(type)
+  }
+
   const isMobilePanelType = (type) => isMobileViewport() && (type === 'search' || type === 'basket')
+
+  const isMobileDialogOpen = (type) => {
+    if (!isMobileViewport()) {
+      return false
+    }
+
+    if (type === 'menu') {
+      return headerEl.classList.contains('menuing')
+    }
+
+    return activePanelType === type
+  }
 
   const getMobileFlyoutContainer = (type) => {
     if (type === 'menu') {
@@ -421,12 +490,138 @@ const initHeaderAndNavigation = () => {
       return []
     }
 
-    return [...panelEl.querySelectorAll(FOCUSABLE_SELECTOR)].filter(isFocusableElementVisible)
+    const closeButtonEl = getMobileCloseButton(type)
+    const focusableEls = [...panelEl.querySelectorAll(FOCUSABLE_SELECTOR)].filter(
+      isFocusableElementVisible
+    )
+
+    if (!(closeButtonEl instanceof HTMLElement) || !focusableEls.includes(closeButtonEl)) {
+      return focusableEls
+    }
+
+    return [closeButtonEl, ...focusableEls.filter((element) => element !== closeButtonEl)]
   }
 
-  const focusMobilePanelCloseButton = (type) => {
-    const focusTargetEl = getMobileCloseButton(type) ?? getMobilePanelFocusables(type)[0] ?? null
-    focusTargetEl?.focus()
+  const clearMobilePanelFocusTimer = () => {
+    if (mobilePanelFocusTimeoutId) {
+      window.clearTimeout(mobilePanelFocusTimeoutId)
+      mobilePanelFocusTimeoutId = 0
+    }
+
+    if (mobilePanelFocusRetryTimeoutId) {
+      window.clearTimeout(mobilePanelFocusRetryTimeoutId)
+      mobilePanelFocusRetryTimeoutId = 0
+    }
+
+    if (mobilePanelFinalFocusTimeoutId) {
+      window.clearTimeout(mobilePanelFinalFocusTimeoutId)
+      mobilePanelFinalFocusTimeoutId = 0
+    }
+  }
+
+  const clearMobilePanelFocusRingTimer = () => {
+    if (!mobilePanelFocusRingTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(mobilePanelFocusRingTimeoutId)
+    mobilePanelFocusRingTimeoutId = 0
+  }
+
+  const clearProgrammaticCloseButtonFocusState = () => {
+    clearMobilePanelFocusRingTimer()
+    mobilePanelCloseEls.forEach((element) => {
+      element.classList.remove('is-programmatic-focus')
+    })
+  }
+
+  const applyProgrammaticCloseButtonFocusState = (element) => {
+    // Do not keep a fake focus ring after the user tabs away.
+    // The real focus outline should come from :focus / :focus-visible only.
+    if (!(element instanceof HTMLElement)) {
+      return
+    }
+
+    clearProgrammaticCloseButtonFocusState()
+  }
+
+  const canFocusMobileCloseButton = (type, element) => {
+    if (!isMobileDialogOpen(type) || !(element instanceof HTMLElement)) {
+      return false
+    }
+
+    if (element.disabled || element.closest('[hidden]') || element.closest('[inert]')) {
+      return false
+    }
+
+    if (element.closest('[aria-hidden="true"]')) {
+      return false
+    }
+
+    const style = window.getComputedStyle(element)
+
+    return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0
+  }
+
+  const focusMobilePanelCloseButton = (type, { preventScroll = true } = {}) => {
+    const closeButtonEl = getMobileCloseButton(type)
+    const fallbackFocusEl = getMobilePanelFocusables(type)[0] ?? null
+    const focusTargetEl = closeButtonEl instanceof HTMLElement ? closeButtonEl : fallbackFocusEl
+
+    if (!(focusTargetEl instanceof HTMLElement) || !canFocusMobileCloseButton(type, focusTargetEl)) {
+      return false
+    }
+
+    focusTargetEl.focus({ preventScroll })
+
+    const isFocused = document.activeElement === focusTargetEl
+
+    if (isFocused) {
+      applyProgrammaticCloseButtonFocusState(focusTargetEl)
+    }
+
+    return isFocused
+  }
+
+  const queueMobilePanelInitialFocus = (type) => {
+    clearMobilePanelFocusTimer()
+
+    const tryFocusCloseButton = (label) => {
+      debugFocusState(`${label}-before`, type)
+      const isFocused = focusMobilePanelCloseButton(type)
+      debugFocusState(`${label}-after`, type)
+
+      if (isFocused) {
+        clearMobilePanelFocusTimer()
+      }
+
+      return isFocused
+    }
+
+    const queueRetryFocus = () => {
+      mobilePanelFocusRetryTimeoutId = window.setTimeout(() => {
+        mobilePanelFocusRetryTimeoutId = 0
+
+        if (tryFocusCloseButton('retry')) {
+          return
+        }
+      }, prefersReducedMotion() ? 20 : 80)
+
+      mobilePanelFinalFocusTimeoutId = window.setTimeout(() => {
+        mobilePanelFinalFocusTimeoutId = 0
+        tryFocusCloseButton('final')
+      }, getPanelOpenDuration() + 80)
+    }
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (tryFocusCloseButton('initial')) {
+          return
+        }
+
+        queueRetryFocus()
+      })
+    })
   }
 
   const trapMobilePanelFocus = (type, event) => {
@@ -481,11 +676,109 @@ const initHeaderAndNavigation = () => {
     return bodyEl?.dataset.mobileFlyout ?? null
   }
 
+  const setTemporaryAriaHidden = (element, isHidden) => {
+    if (!(element instanceof HTMLElement)) {
+      return
+    }
+
+    if (isHidden) {
+      if (!('originalAriaHidden' in element.dataset)) {
+        const previousValue = element.getAttribute('aria-hidden')
+        element.dataset.originalAriaHidden = previousValue === null ? '__missing__' : previousValue
+      }
+
+      element.setAttribute('aria-hidden', 'true')
+      return
+    }
+
+    if (!('originalAriaHidden' in element.dataset)) {
+      return
+    }
+
+    const { originalAriaHidden } = element.dataset
+
+    if (originalAriaHidden === '__missing__') {
+      element.removeAttribute('aria-hidden')
+    } else {
+      element.setAttribute('aria-hidden', originalAriaHidden)
+    }
+
+    delete element.dataset.originalAriaHidden
+  }
+
+  const syncMobileFocusIsolation = ({ mobileFlyoutType = null } = {}) => {
+    const isMobileOverlayOpen = isMobileViewport() && Boolean(mobileFlyoutType)
+
+    appContentEls.forEach((element) => {
+      element.inert = isMobileOverlayOpen
+      setTemporaryAriaHidden(element, isMobileOverlayOpen)
+    })
+
+    headerFocusGuardEls.forEach((element) => {
+      if (!(element instanceof HTMLElement)) {
+        return
+      }
+
+      const shouldKeepInteractive =
+        !isMobileOverlayOpen ||
+        (mobileFlyoutType === 'menu' && element === cloneMenuEl) ||
+        ((mobileFlyoutType === 'search' || mobileFlyoutType === 'basket') && element === flyoutRootEl)
+
+      element.inert = !shouldKeepInteractive
+    })
+  }
+
+  const clearPendingFocusReturn = () => {
+    if (!pendingFocusReturnTimeoutId) {
+      return
+    }
+
+    window.clearTimeout(pendingFocusReturnTimeoutId)
+    pendingFocusReturnTimeoutId = 0
+  }
+
+  const queueFocusReturn = (targetEl, { panelType = null, delay = 0 } = {}) => {
+    clearPendingFocusReturn()
+
+    if (!(targetEl instanceof HTMLElement)) {
+      return
+    }
+
+    const restoreFocus = () => {
+      if (panelType && isMobileDialogOpen(panelType)) {
+        pendingFocusReturnTimeoutId = 0
+        return
+      }
+
+      const closingPanelEl = panelType ? getMobileFlyoutContainer(panelType) : null
+      const activeEl = document.activeElement
+      const shouldRestore =
+        !activeEl ||
+        activeEl === document.body ||
+        activeEl === rootEl ||
+        (closingPanelEl instanceof HTMLElement && closingPanelEl.contains(activeEl))
+
+      if (shouldRestore && isFocusableElementVisible(targetEl)) {
+        targetEl.focus({ preventScroll: true })
+      }
+
+      pendingFocusReturnTimeoutId = 0
+    }
+
+    if (!delay) {
+      restoreFocus()
+      return
+    }
+
+    pendingFocusReturnTimeoutId = window.setTimeout(restoreFocus, delay)
+  }
+
   const syncPanelAccessibility = ({
     isSearchOpen = false,
     isBasketOpen = false,
     isHeaderMenuOpen = false,
-    isFlyoutOpen = false
+    isFlyoutOpen = false,
+    mobileFlyoutType = null
   } = {}) => {
     const isMobile = isMobileViewport()
 
@@ -533,6 +826,17 @@ const initHeaderAndNavigation = () => {
       'aria-hidden',
       String(isMobile ? !(isSearchOpen || isBasketOpen) : !isFlyoutOpen)
     )
+
+    searchStarterEl?.setAttribute('aria-controls', 'header-search-flyout')
+    basketStarterEl?.setAttribute('aria-controls', 'header-basket-flyout')
+    menuStarterEl?.setAttribute('aria-controls', 'global-mobile-menu')
+    searchStarterEl?.setAttribute('aria-haspopup', isMobile ? 'dialog' : 'true')
+    basketStarterEl?.setAttribute('aria-haspopup', isMobile ? 'dialog' : 'true')
+    menuStarterEl?.setAttribute('aria-haspopup', isMobile ? 'dialog' : 'true')
+    searchMobileCloseEl?.setAttribute('aria-label', MOBILE_CLOSE_LABELS.search)
+    basketMobileCloseEl?.setAttribute('aria-label', MOBILE_CLOSE_LABELS.basket)
+    menuMobileCloseEl?.setAttribute('aria-label', MOBILE_CLOSE_LABELS.menu)
+    syncMobileFocusIsolation({ mobileFlyoutType })
   }
 
   const clearPanelHoverCloseTimer = () => {
@@ -570,6 +874,10 @@ const initHeaderAndNavigation = () => {
     activePanelType && Date.now() - panelOpenedAt < GLOBAL_PANEL_CONFIG.autoCloseGuardDuration
 
   const debugClose = (source, extra = {}) => {
+    if (!DEBUG) {
+      return
+    }
+
     console.log('[flyout-close]', source, {
       activePanelType,
       ...extra
@@ -832,7 +1140,6 @@ const initHeaderAndNavigation = () => {
     const isMobileMenuClosing = headerEl.classList.contains('is-mobile-menu-closing')
     const isHeaderMenuVisible = isHeaderMenuOpen || (isMobileViewport() && isMobileMenuClosing)
     const isNavMenuOpen = navEl.classList.contains('menuing')
-    const isMobileHeaderOverlayOpen = isMobileViewport() && (isHeaderMenuOpen || isSearchOpen || isBasketOpen)
     const isFlyoutOpen = Boolean(visualPanelType)
     const mobileFlyoutType = isMobileViewport()
       ? isHeaderMenuVisible
@@ -866,7 +1173,13 @@ const initHeaderAndNavigation = () => {
     setHiddenState(panelBackdropEl, isMobileViewport() || !isFlyoutOpen)
     setHiddenState(cloneMenuEl, !isHeaderMenuVisible || !isMobileViewport())
     setHiddenState(navMenuEl, isMobileViewport() ? !isNavMenuOpen : false)
-    syncPanelAccessibility({ isSearchOpen, isBasketOpen, isHeaderMenuOpen, isFlyoutOpen })
+    syncPanelAccessibility({
+      isSearchOpen,
+      isBasketOpen,
+      isHeaderMenuOpen,
+      isFlyoutOpen,
+      mobileFlyoutType
+    })
     bodyEl?.classList.toggle('is-mobile-flyout-open', Boolean(mobileFlyoutType))
     bodyEl?.classList.toggle('is-mobile-flyout-closing', isMobileFlyoutClosing)
 
@@ -878,82 +1191,32 @@ const initHeaderAndNavigation = () => {
       }
     }
 
-    if (basketStarterEl) {
-      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
+    if (isMobileViewport() && mobileFlyoutType) {
+      if (lastInitialFocusedMobileFlyoutType !== mobileFlyoutType) {
+        lastInitialFocusedMobileFlyoutType = mobileFlyoutType
+        queueMobilePanelInitialFocus(mobileFlyoutType)
+      }
+    } else {
+      lastInitialFocusedMobileFlyoutType = null
+      clearProgrammaticCloseButtonFocusState()
     }
 
-    if (searchStarterEl) {
-      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
-    }
-
-    if (menuStarterEl) {
-      menuStarterEl.setAttribute(
-        'aria-label',
-        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
-      )
-    }
-
-    if (navMenuToggleEl) {
-      navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
-    }
-
-    if (basketStarterEl) {
-      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
-    }
-
-    if (searchStarterEl) {
-      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
-    }
-
-    if (menuStarterEl) {
-      menuStarterEl.setAttribute(
-        'aria-label',
-        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
-      )
-    }
-
-    if (navMenuToggleEl) {
-      navMenuToggleEl.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
-    }
-
-    if (basketStarterEl) {
-      basketStarterEl.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
-    }
-
-    if (searchStarterEl) {
-      searchStarterEl.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
-    }
-
-    if (menuStarterEl) {
-      menuStarterEl.setAttribute(
-        'aria-label',
-        isMobileHeaderOverlayOpen ? '닫기' : isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기'
-      )
-    }
-
-    if (navMenuToggleEl) {
-      navMenuToggleEl.setAttribute(
-        'aria-label',
-        isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기'
-      )
-    }
-
-    basketStarterEl?.setAttribute('aria-label', isBasketOpen ? '장바구니 닫기' : '장바구니 열기')
-    searchStarterEl?.setAttribute('aria-label', isSearchOpen ? '검색 닫기' : '검색 열기')
-    menuStarterEl?.setAttribute('aria-label', isHeaderMenuOpen ? '전역 메뉴 닫기' : '전역 메뉴 열기')
-    navMenuToggleEl?.setAttribute('aria-label', isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기')
-
-    basketStarterEl?.setAttribute('aria-label', isBasketOpen ? '\uC7A5\uBC14\uAD6C\uB2C8 \uB2EB\uAE30' : '\uC7A5\uBC14\uAD6C\uB2C8 \uC5F4\uAE30')
-    searchStarterEl?.setAttribute('aria-label', isSearchOpen ? '\uAC80\uC0C9 \uB2EB\uAE30' : '\uAC80\uC0C9 \uC5F4\uAE30')
+    basketStarterEl?.setAttribute(
+      'aria-label',
+      isBasketOpen ? MOBILE_TRIGGER_LABELS.basket.close : MOBILE_TRIGGER_LABELS.basket.open
+    )
+    searchStarterEl?.setAttribute(
+      'aria-label',
+      isSearchOpen ? MOBILE_TRIGGER_LABELS.search.close : MOBILE_TRIGGER_LABELS.search.open
+    )
     menuStarterEl?.setAttribute(
       'aria-label',
-      isMobileHeaderOverlayOpen
-        ? '\uB2EB\uAE30'
-        : isHeaderMenuOpen
-          ? '\uC804\uC5ED \uBA54\uB274 \uB2EB\uAE30'
-          : '\uC804\uC5ED \uBA54\uB274 \uC5F4\uAE30'
+      isHeaderMenuOpen ? MOBILE_TRIGGER_LABELS.menu.close : MOBILE_TRIGGER_LABELS.menu.open
     )
-    navMenuToggleEl?.setAttribute('aria-label', isNavMenuOpen ? '\uC81C\uD488 \uBA54\uB274 \uB2EB\uAE30' : '\uC81C\uD488 \uBA54\uB274 \uC5F4\uAE30')
+    navMenuToggleEl?.setAttribute(
+      'aria-label',
+      isNavMenuOpen ? '제품 메뉴 닫기' : '제품 메뉴 열기'
+    )
 
     syncHeaderRevealState({ forceVisible: isHeaderOverlayActive() })
   }
@@ -1004,9 +1267,12 @@ const initHeaderAndNavigation = () => {
   const closeHeaderMenu = ({ restoreFocus = false } = {}) => {
     const isMobileMenu = isMobileViewport()
     const isMenuOpen = headerEl.classList.contains('menuing')
+    const restoreTargetEl = restoreFocus ? getMobilePanelTrigger('menu') : null
 
     if (isMobileMenu && isMenuOpen) {
       clearMobileMenuCloseTimer()
+      clearMobilePanelFocusTimer()
+      clearProgrammaticCloseButtonFocusState()
       headerEl.classList.remove('menuing')
       headerEl.classList.add('is-mobile-menu-closing')
       cloneMenuEl?.classList.remove('is-open')
@@ -1018,18 +1284,18 @@ const initHeaderAndNavigation = () => {
         headerEl.classList.remove('is-mobile-menu-closing')
         cloneMenuEl?.classList.remove('is-closing')
         syncScrollLock()
+        queueFocusReturn(restoreTargetEl, { panelType: 'menu' })
         mobileMenuCloseTimeoutId = 0
       }, prefersReducedMotion() ? 20 : MOBILE_MENU_CONFIG.closeCleanupDuration)
     } else {
       clearMobileMenuCloseTimer()
+      clearMobilePanelFocusTimer()
+      clearProgrammaticCloseButtonFocusState()
       headerEl.classList.remove('menuing', 'is-mobile-menu-closing')
       cloneMenuEl?.classList.remove('is-open', 'is-closing')
       setHeaderMenuOpenMode()
       syncScrollLock()
-    }
-
-    if (restoreFocus) {
-      menuStarterEl?.focus()
+      queueFocusReturn(restoreTargetEl, { panelType: 'menu' })
     }
   }
 
@@ -1044,26 +1310,65 @@ const initHeaderAndNavigation = () => {
     syncScrollLock()
   }
 
+  const moveFocusOutOfClosingFlyout = (closingType, closingPanelEl, restoreTargetEl = null) => {
+    const activeEl = document.activeElement
+
+    if (!(closingPanelEl instanceof HTMLElement) || !(activeEl instanceof HTMLElement)) {
+      return
+    }
+
+    if (!closingPanelEl.contains(activeEl)) {
+      return
+    }
+
+    const fallbackTargetEl =
+      restoreTargetEl instanceof HTMLElement ? restoreTargetEl : getMobilePanelTrigger(closingType)
+
+    // The trigger can be inside an inert header group while the mobile dialog is open.
+    // Release that group first, then move focus before aria-hidden is applied to .header-flyout.
+    if (isMobileViewport()) {
+      headerFocusGuardEls.forEach((element) => {
+        if (element instanceof HTMLElement) {
+          element.inert = false
+        }
+      })
+    }
+
+    if (fallbackTargetEl instanceof HTMLElement) {
+      fallbackTargetEl.focus({ preventScroll: true })
+
+      if (document.activeElement === fallbackTargetEl) {
+        return
+      }
+    }
+
+    activeEl.blur()
+  }
+
   const closeHeaderFlyout = ({
     reason = 'unknown',
     restoreFocus = false,
     clearSearchInput = true
   } = {}) => {
     if (!activePanelType) {
-      console.log('[closeHeaderFlyout]', reason, { activePanelType })
+      debugClose('close-header-flyout-noop', { reason })
       return
     }
 
-    console.log('[closeHeaderFlyout]', reason, { activePanelType })
+    debugClose('close-header-flyout', { reason })
 
     const closingType = activePanelType
     const closingPanelEl = getPanel(closingType)
     const restoreTargetEl = restoreFocus ? lastPanelTriggerEl : null
 
+    moveFocusOutOfClosingFlyout(closingType, closingPanelEl, restoreTargetEl)
+
     clearPanelHoverCloseTimer()
     disarmPanelHoverClose()
     clearPanelVisualStateTimer()
     clearSearchFocusTimer()
+    clearMobilePanelFocusTimer()
+    clearProgrammaticCloseButtonFocusState()
     renderedPanelType = closingType
     closingPanelType = closingType
     activePanelType = null
@@ -1071,11 +1376,6 @@ const initHeaderAndNavigation = () => {
     closingPanelEl?.classList.add('is-closing')
     panelBackdropEl?.classList.remove('is-open', 'is-animating')
     panelBackdropEl?.classList.add('is-closing')
-    searchStarterEl?.setAttribute('aria-label', '검색 열기')
-    basketStarterEl?.setAttribute('aria-label', '장바구니 열기')
-
-    searchStarterEl?.setAttribute('aria-label', '검색 열기')
-    basketStarterEl?.setAttribute('aria-label', '장바구니 열기')
 
     if (clearSearchInput && searchInputEl) {
       searchInputEl.value = ''
@@ -1091,7 +1391,6 @@ const initHeaderAndNavigation = () => {
     setSearchOpenMode()
     setBasketOpenMode()
     panelOpenedAt = 0
-    lastPanelTriggerEl = null
     syncGlobalPanelBackdropPosition(closingType)
     syncScrollLock()
     syncInteractiveStates()
@@ -1111,9 +1410,11 @@ const initHeaderAndNavigation = () => {
       panelVisualStateTimeoutId = 0
     }, getPanelCloseCleanupDuration())
 
-    if (restoreTargetEl instanceof HTMLElement) {
-      restoreTargetEl.focus()
-    }
+    queueFocusReturn(restoreTargetEl, {
+      panelType: closingType,
+      delay: getPanelCloseCleanupDuration()
+    })
+    lastPanelTriggerEl = null
   }
 
   // Panel switches should tear down the previous flyout immediately so search/basket never overlap.
@@ -1122,6 +1423,9 @@ const initHeaderAndNavigation = () => {
     disarmPanelHoverClose()
     clearPanelVisualStateTimer()
     clearSearchFocusTimer()
+    clearMobilePanelFocusTimer()
+    clearProgrammaticCloseButtonFocusState()
+    clearPendingFocusReturn()
     resetPanelVisualStates()
 
     if (clearSearchInput && searchInputEl) {
@@ -1170,6 +1474,7 @@ const initHeaderAndNavigation = () => {
     clearPanelHoverCloseTimer()
     disarmPanelHoverClose()
     clearPanelVisualStateTimer()
+    clearPendingFocusReturn()
     resetPanelVisualStates()
 
     closingPanelType = null
@@ -1209,10 +1514,6 @@ const initHeaderAndNavigation = () => {
     armPanelHoverClose()
 
     if (isMobilePanelType(type)) {
-      window.requestAnimationFrame(() => {
-        syncGlobalPanelBackdropPosition(type)
-        focusMobilePanelCloseButton(type)
-      })
       return
     }
 
@@ -1272,6 +1573,8 @@ const initHeaderAndNavigation = () => {
 
   const closeAllNavigationLayers = ({ preserveSearch = false, restoreFocus = false } = {}) => {
     const shouldKeepSearchOpen = preserveSearch && activePanelType === 'search'
+    const shouldRestoreHeaderMenuFocus =
+      restoreFocus && isMobileViewport() && headerEl.classList.contains('menuing')
 
     if (!shouldKeepSearchOpen) {
       const shouldRestorePanelFocus = restoreFocus && Boolean(activePanelType)
@@ -1280,7 +1583,7 @@ const initHeaderAndNavigation = () => {
     }
 
     hideNavMenu()
-    closeHeaderMenu({ restoreFocus: restoreFocus && isKeyboardHeaderMenuSession() })
+    closeHeaderMenu({ restoreFocus: shouldRestoreHeaderMenuFocus || (restoreFocus && isKeyboardHeaderMenuSession()) })
     closeMobileSearch()
 
     if (preserveSearch) {
@@ -1339,6 +1642,7 @@ const initHeaderAndNavigation = () => {
     } else {
       hideSearch()
       clearMobileMenuCloseTimer()
+      clearPendingFocusReturn()
       headerEl.classList.remove('is-mobile-menu-closing')
       cloneMenuEl?.classList.remove('is-closing')
       cloneMenuEl?.classList.add('is-open')
@@ -1349,9 +1653,7 @@ const initHeaderAndNavigation = () => {
     syncScrollLock()
 
     if (isMobileViewport() && headerEl.classList.contains('menuing')) {
-      window.requestAnimationFrame(() => {
-        focusMobilePanelCloseButton('menu')
-      })
+      syncInteractiveStates()
     }
   }
 
@@ -1481,9 +1783,9 @@ const initHeaderAndNavigation = () => {
     }, 90)
   }
 
-  /* 최근 입력 수단 추적
-     - Tab / Enter / Space / 방향키 등 키보드 탐색 가능성이 높은 입력이면 true
-     - 마우스/포인터/터치는 false */
+  /* 理쒓렐 ?낅젰 ?섎떒 異붿쟻
+     - Tab / Enter / Space / 諛⑺뼢?????ㅻ낫???먯깋 媛?μ꽦???믪? ?낅젰?대㈃ true
+     - 留덉슦???ъ씤???곗튂??false */
   window.addEventListener('keydown', (event) => {
     const { key, metaKey, altKey, ctrlKey } = event
 
@@ -1615,6 +1917,22 @@ const initHeaderAndNavigation = () => {
     })
   })
 
+  document.addEventListener('focusin', (event) => {
+    const mobileFlyoutType = getActiveMobileFlyoutType()
+
+    if (!mobileFlyoutType) {
+      return
+    }
+
+    const panelEl = getMobileFlyoutContainer(mobileFlyoutType)
+
+    if (!panelEl || panelEl.contains(event.target)) {
+      return
+    }
+
+    queueMobilePanelInitialFocus(mobileFlyoutType)
+  })
+
   searchQuickLinkEls.forEach((element, index) => {
     const isLastQuickLink = index === searchQuickLinkEls.length - 1
 
@@ -1709,6 +2027,10 @@ const initHeaderAndNavigation = () => {
     })
 
     element.addEventListener('keydown', (event) => {
+      if (event.key === 'Tab') {
+        clearProgrammaticCloseButtonFocusState()
+      }
+
       if (event.key !== 'Tab' || !event.shiftKey) {
         return
       }
@@ -1730,6 +2052,10 @@ const initHeaderAndNavigation = () => {
         event.preventDefault()
         closeGlobalPanel({ reason: 'mobile-panel-shift-tab', restoreFocus: true })
       }
+    })
+
+    element.addEventListener('blur', () => {
+      element.classList.remove('is-programmatic-focus')
     })
   })
 
@@ -1785,6 +2111,9 @@ const initHeaderAndNavigation = () => {
   })
 
   window.addEventListener('resize', () => {
+    clearMobilePanelFocusTimer()
+    clearProgrammaticCloseButtonFocusState()
+    clearPendingFocusReturn()
     syncBrowserTopOffset()
     syncBasketPanelHeight()
     syncGlobalPanelBackdropPosition()
@@ -2134,3 +2463,4 @@ initStageVideoControls()
 renderCompareSection()
 initFooterNavigation()
 initHeroIntro()
+

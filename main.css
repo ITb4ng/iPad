@@ -1198,7 +1198,7 @@ header:not(.is-scroll-hidden) {
 
   header {
     background-color: var(--global-header-default);
-    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    /* border-bottom: 1px solid rgba(0, 0, 0, .08); */ 
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1534,6 +1534,11 @@ header:not(.is-scroll-hidden) {
   }
 
   header .global-mobile-panel__close:focus-visible {
+    outline-offset: 3px;
+  }
+
+  header .global-mobile-panel__close.is-programmatic-focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: 3px;
   }
 
