@@ -1951,11 +1951,14 @@ const initHeaderAndNavigation = () => {
       }
 
       event.preventDefault()
-      const nextFocusableEl = getNextFocusableElement(element)
+      const nextFocusableEl =
+        basketStarterEl instanceof HTMLElement
+          ? basketStarterEl
+          : getNextFocusableElement(searchStarterEl)
 
       debugClose('search-last-tab')
       closeGlobalPanel({ reason: 'search-last-tab' })
-      nextFocusableEl?.focus()
+      nextFocusableEl?.focus({ preventScroll: true })
     })
   })
 
@@ -1978,11 +1981,14 @@ const initHeaderAndNavigation = () => {
 
       event.preventDefault()
 
-      const nextFocusableEl = getNextFocusableElement(element)
+      const nextFocusableEl =
+        menuStarterEl instanceof HTMLElement
+          ? menuStarterEl
+          : getNextFocusableElement(basketStarterEl)
 
       debugClose('basket-last-tab')
       hideBasket()
-      nextFocusableEl?.focus()
+      nextFocusableEl?.focus({ preventScroll: true })
     })
   })
 
