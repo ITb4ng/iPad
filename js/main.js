@@ -1012,12 +1012,12 @@ const initHeaderAndNavigation = () => {
       cloneMenuEl?.classList.remove('is-open')
       cloneMenuEl?.classList.add('is-closing')
       setHeaderMenuOpenMode()
-      syncInteractiveStates()
+      syncScrollLock()
 
       mobileMenuCloseTimeoutId = window.setTimeout(() => {
         headerEl.classList.remove('is-mobile-menu-closing')
         cloneMenuEl?.classList.remove('is-closing')
-        syncInteractiveStates()
+        syncScrollLock()
         mobileMenuCloseTimeoutId = 0
       }, prefersReducedMotion() ? 20 : MOBILE_MENU_CONFIG.closeCleanupDuration)
     } else {
@@ -1025,7 +1025,7 @@ const initHeaderAndNavigation = () => {
       headerEl.classList.remove('menuing', 'is-mobile-menu-closing')
       cloneMenuEl?.classList.remove('is-open', 'is-closing')
       setHeaderMenuOpenMode()
-      syncInteractiveStates()
+      syncScrollLock()
     }
 
     if (restoreFocus) {
