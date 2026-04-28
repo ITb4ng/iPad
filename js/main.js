@@ -357,6 +357,7 @@ const initHeaderAndNavigation = () => {
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
   const navMenuEl = navEl.querySelector('#product-nav-menu')
+  const navMenuLinkEls = navMenuEl ? [...navMenuEl.querySelectorAll('a[href]')] : []
   const skipLinkEl = document.querySelector('.skip-link')
   const mainEl = document.querySelector('main')
   const footerEl = document.querySelector('footer')
@@ -2189,6 +2190,14 @@ const initHeaderAndNavigation = () => {
 
   navEl.addEventListener('click', (event) => {
     event.stopPropagation()
+  })
+
+  navMenuLinkEls.forEach((element) => {
+    element.addEventListener('click', () => {
+      if (isMobileViewport()) {
+        hideNavMenu()
+      }
+    })
   })
 
   navMenuShadowEl?.addEventListener('click', hideNavMenu)

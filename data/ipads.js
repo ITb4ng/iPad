@@ -21,7 +21,7 @@ export default [
     name: 'iPad',
     tagline: '매일매일 여러 일을 척척.<br />널찍한 화면. 화사한 색상',
     price: 529000,
-    url: '/buy/ipad-10-9'
+    url: '/buy/ipad-11'
   },
   {
     thumbnail: './images/compare_ipad_mini.png',
