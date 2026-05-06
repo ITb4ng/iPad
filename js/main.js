@@ -34,7 +34,38 @@ const HEADER_REVEAL_CONFIG = Object.freeze({
 
 const DEBUG = false
 
-const APPLE_BASE_URL = 'https://www.apple.com/kr'
+const PROJECT_ROUTE_ALIASES = Object.freeze({
+  '/shop/buy-ipad': '/buy',
+  '/shop/ipad/ipad-accessories': '/shop/accessories',
+  '/shop/accessories/all': '/accessories',
+  '/shop/trade-in': '/trade-in',
+  '/shop/account/home': '/account',
+  '/shop/order/list': '/orders',
+  '/shop/browse/open/salespolicies': '/legal/sales',
+  '/shop/goto/store': '/store',
+  '/shop/goto/buy_accessories': '/accessories',
+  '/shop/goto/account': '/account',
+  '/shop/goto/special_deals': '/shop/special-deals',
+  '/shop/goto/financing': '/financing',
+  '/shop/goto/order/list': '/orders',
+  '/shop/goto/help': '/support',
+  '/ipad/compare': '/compare',
+  '/ipad/cellular': '/learn/cellular',
+  '/apple-pencil': '/learn/apple-pencil',
+  '/ipad-keyboards': '/learn/keyboards',
+  '/ipados': '/learn/ipados',
+  '/app-store': '/learn/app-store',
+  '/privacy': '/learn/privacy',
+  '/accessibility': '/learn/accessibility',
+  '/environment': '/learn/environment',
+  '/apple-intelligence': '/learn/apple-intelligence',
+  '/apple-vision-pro': '/learn/vision-pro',
+  '/ios/feature-availability': '/support/feature-availability',
+  '/legal/privacy': '/legal/privacy',
+  '/legal/internet-services/terms/site.html': '/legal/terms',
+  '/sitemap': '/sitemap'
+})
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -167,16 +198,83 @@ const getNextFocusableElement = (currentElement) => {
   return focusableEls[currentIndex + 1] ?? null
 }
 
-const toAbsoluteAppleUrl = (url) => {
+const normalizeProjectPath = (path) => {
+  if (!path) {
+    return '/'
+  }
+
+  const sanitizedPath =
+    path.length > 1 ? path.replace(/\/+$/, '') || '/' : path
+
+  return PROJECT_ROUTE_ALIASES[sanitizedPath] ?? sanitizedPath
+}
+
+const toProjectUrl = (url) => {
   if (!url) {
     return '#'
   }
 
-  if (/^https?:\/\//.test(url)) {
+  if (/^(#|tel:|mailto:)/.test(url)) {
     return url
   }
 
-  return `${APPLE_BASE_URL}${url}`
+  if (url.startsWith('/kr/')) {
+    return normalizeProjectPath(url.replace(/^\/kr/, '') || '/')
+  }
+
+  if (/^https?:\/\//.test(url)) {
+    try {
+      const parsedUrl = new URL(url)
+      const host = parsedUrl.hostname.replace(/^www\./, '')
+
+      if (host === 'appleid.apple.com') {
+        return '/apple-id'
+      }
+
+      if (host === 'icloud.com') {
+        return '/icloud'
+      }
+
+      if (host === 'locate.apple.com') {
+        return '/reseller'
+      }
+
+      let nextPathname = parsedUrl.pathname || '/'
+
+      if (host === 'support.apple.com') {
+        nextPathname = nextPathname.replace(/^\/ko-kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname === '/' ? '/support' : `/support${nextPathname}`)
+      }
+
+      if (host === 'apps.apple.com') {
+        nextPathname = nextPathname.replace(/^\/kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname === '/' ? '/app-store' : nextPathname)
+      }
+
+      if (host === 'apple.com') {
+        nextPathname = nextPathname.replace(/^\/kr(?=\/|$)/, '') || '/'
+        return normalizeProjectPath(nextPathname)
+      }
+    } catch (error) {
+      return url
+    }
+  }
+
+  return url.startsWith('/') ? normalizeProjectPath(url) : url
+}
+
+const normalizeProjectAnchors = (root = document) => {
+  const linkEls = [...root.querySelectorAll('a[href]')]
+
+  linkEls.forEach((linkEl) => {
+    const href = linkEl.getAttribute('href')
+
+    if (!href) {
+      return
+    }
+
+    linkEl.setAttribute('href', toProjectUrl(href))
+  })
 }
 
 const setExpandedState = (element, isExpanded) => {
@@ -241,7 +339,6 @@ const initHeaderAndNavigation = () => {
   const searchWrapEl = headerEl.querySelector('.search-wrap')
   const searchPanelEl = searchWrapEl?.querySelector('.search')
   const searchStarterEl = headerEl.querySelector('.search-starter > button')
-  const searchCloserEl = searchWrapEl?.querySelector('.search-closer')
   const searchMobileCloseEl = searchWrapEl?.querySelector('[data-mobile-panel-close="search"]')
   const searchResetEl = searchWrapEl?.querySelector('.search-reset')
   const searchInputEl = searchWrapEl?.querySelector('input')
@@ -260,6 +357,7 @@ const initHeaderAndNavigation = () => {
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
   const navMenuEl = navEl.querySelector('#product-nav-menu')
+  const navMenuLinkEls = navMenuEl ? [...navMenuEl.querySelectorAll('a[href]')] : []
   const skipLinkEl = document.querySelector('.skip-link')
   const mainEl = document.querySelector('main')
   const footerEl = document.querySelector('footer')
@@ -2094,6 +2192,14 @@ const initHeaderAndNavigation = () => {
     event.stopPropagation()
   })
 
+  navMenuLinkEls.forEach((element) => {
+    element.addEventListener('click', () => {
+      if (isMobileViewport()) {
+        hideNavMenu()
+      }
+    })
+  })
+
   navMenuShadowEl?.addEventListener('click', hideNavMenu)
 
   window.addEventListener('click', () => {
@@ -2185,25 +2291,269 @@ const initIntersectionReveal = () => {
   })
 }
 
+const supportsIntersectionObserver = () => typeof window.IntersectionObserver === 'function'
+
+const ensureDeferredVideoLoaded = (videoEl) => {
+  if (!(videoEl instanceof HTMLVideoElement)) {
+    return false
+  }
+
+  if (videoEl.dataset.srcLoaded === 'true') {
+    return true
+  }
+
+  const deferredSrc = videoEl.dataset.src
+  if (!deferredSrc) {
+    return false
+  }
+
+  videoEl.src = deferredSrc
+  videoEl.load()
+  videoEl.dataset.srcLoaded = 'true'
+  return true
+}
+
 const initStageVideoControls = () => {
   const stageVideoEl = document.querySelector('.stage video')
   const playBtnEl = document.querySelector('.stage .controller--play')
   const pauseBtnEl = document.querySelector('.stage .controller--pause')
+  const stageSectionEl = document.querySelector('.camera .stage')
 
-  if (!stageVideoEl || !playBtnEl || !pauseBtnEl) {
+  if (!stageVideoEl || !playBtnEl || !pauseBtnEl || !stageSectionEl) {
     return
   }
 
+  const canUseIntersectionObserver = supportsIntersectionObserver()
+  let hasVideoLoaded = false
+  let hasAutoPlayed = false
+  let hasPlaybackEnded = false
+  let hasPendingAutoplay = false
+
+  const syncControls = (isPlaying) => {
+    playBtnEl.classList.toggle('hide', isPlaying)
+    pauseBtnEl.classList.toggle('hide', !isPlaying)
+  }
+
+  const ensureVideoLoaded = () => {
+    if (hasVideoLoaded) {
+      return
+    }
+
+    hasVideoLoaded = ensureDeferredVideoLoaded(stageVideoEl)
+  }
+
+  const playStageVideo = ({ auto = false } = {}) => {
+    if (hasPlaybackEnded && auto) {
+      return
+    }
+
+    ensureVideoLoaded()
+    hasPendingAutoplay = auto
+
+    if (hasPlaybackEnded && !auto) {
+      stageVideoEl.currentTime = 0
+      hasPlaybackEnded = false
+    }
+
+    if (stageVideoEl.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      return
+    }
+
+    const playPromise = stageVideoEl.play()
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        syncControls(false)
+      })
+      return
+    }
+
+    syncControls(true)
+  }
+
+  stageVideoEl.addEventListener('play', () => {
+    hasPendingAutoplay = false
+    syncControls(true)
+  })
+
+  stageVideoEl.addEventListener('pause', () => {
+    if (!hasPlaybackEnded) {
+      syncControls(false)
+    }
+  })
+
+  stageVideoEl.addEventListener('ended', () => {
+    hasPlaybackEnded = true
+    hasPendingAutoplay = false
+    syncControls(false)
+  })
+
+  stageVideoEl.addEventListener('loadeddata', () => {
+    if (!hasPendingAutoplay || hasPlaybackEnded) {
+      return
+    }
+
+    playStageVideo({ auto: true })
+  })
+
   playBtnEl.addEventListener('click', () => {
-    stageVideoEl.play()
-    playBtnEl.classList.add('hide')
-    pauseBtnEl.classList.remove('hide')
+    playStageVideo()
   })
 
   pauseBtnEl.addEventListener('click', () => {
     stageVideoEl.pause()
-    playBtnEl.classList.remove('hide')
-    pauseBtnEl.classList.add('hide')
+    syncControls(false)
+  })
+
+  if (!canUseIntersectionObserver) {
+    playStageVideo({ auto: true })
+    hasAutoPlayed = true
+    return
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting || entry.intersectionRatio < 0.35 || hasAutoPlayed) {
+        return
+      }
+
+      playStageVideo({ auto: true })
+      hasAutoPlayed = true
+      observer.unobserve(entry.target)
+    })
+  }, {
+    threshold: [0.35, 0.6]
+  })
+
+  observer.observe(stageSectionEl)
+}
+
+const initDesignVideoTransition = () => {
+  const videoShellEls = [...document.querySelectorAll('[data-design-video-shell]')]
+  const canUseIntersectionObserver = supportsIntersectionObserver()
+
+  videoShellEls.forEach((shellEl) => {
+    const videoEl = shellEl.querySelector('[data-design-video]')
+    const endframeEl = shellEl.querySelector('[data-design-video-endframe]')
+    const transitionMode = shellEl.getAttribute('data-design-video-mode')
+    let hasPlaybackStarted = false
+    let hasPlaybackEnded = false
+    let hasVideoLoaded = false
+    let hasPendingAutoplay = false
+
+    if (!(videoEl instanceof HTMLVideoElement)) {
+      return
+    }
+
+    const prepareEndframe = async () => {
+      if (!(endframeEl instanceof HTMLImageElement)) {
+        return
+      }
+
+      if (typeof endframeEl.decode === 'function') {
+        try {
+          await endframeEl.decode()
+        } catch (error) {
+          // Ignore decode failures and fall back to the normal loaded state.
+        }
+      }
+    }
+
+    if (prefersReducedMotion()) {
+      shellEl.classList.add('is-reduced-motion')
+      videoEl.pause()
+      videoEl.style.visibility = 'hidden'
+      return
+    }
+
+    const showEndframe = async () => {
+      hasPlaybackEnded = true
+      await prepareEndframe()
+      if (transitionMode === 'swap') {
+        shellEl.classList.add('is-ended')
+        videoEl.pause()
+        videoEl.style.visibility = 'hidden'
+        return
+      }
+
+      window.requestAnimationFrame(() => {
+        shellEl.classList.add('is-ended')
+        videoEl.pause()
+      })
+    }
+
+    videoEl.currentTime = 0
+    void prepareEndframe()
+    videoEl.addEventListener('ended', showEndframe, { once: true })
+
+    const ensureVideoLoaded = () => {
+      if (hasVideoLoaded) {
+        return
+      }
+
+      hasVideoLoaded = ensureDeferredVideoLoaded(videoEl)
+    }
+
+    const startPlayback = () => {
+      if (hasPlaybackEnded) {
+        return
+      }
+
+      ensureVideoLoaded()
+      hasPendingAutoplay = true
+
+      if (videoEl.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        return
+      }
+
+      hasPlaybackStarted = true
+      videoEl.style.visibility = ''
+
+      const playbackPromise = videoEl.play()
+      if (playbackPromise && typeof playbackPromise.catch === 'function') {
+        playbackPromise.catch(() => {
+          hasPlaybackStarted = false
+        })
+      }
+    }
+
+    videoEl.addEventListener('play', () => {
+      hasPendingAutoplay = false
+    })
+
+    videoEl.addEventListener('loadeddata', () => {
+      if (!hasPendingAutoplay || hasPlaybackEnded) {
+        return
+      }
+
+      startPlayback()
+    })
+
+    if (!canUseIntersectionObserver) {
+      startPlayback()
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (hasPlaybackEnded) {
+          observer.unobserve(entry.target)
+          return
+        }
+
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+          startPlayback()
+          return
+        }
+
+        if (hasPlaybackStarted) {
+          videoEl.pause()
+        }
+      })
+    }, {
+      threshold: [0.35, 0.6]
+    })
+
+    observer.observe(shellEl)
   })
 }
 
@@ -2234,8 +2584,8 @@ const renderCompareSection = () => {
       <h3 class="name">${ipad.name}</h3>
       <p class="tagline">${ipad.tagline}</p>
       <p class="price">₩${ipad.price.toLocaleString('ko-KR')}&nbsp;부터</p>
-      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="btn" aria-label="${ipad.name} 구입하기">구입하기</a>
-      <a href="${toAbsoluteAppleUrl(ipad.url)}" class="link" aria-label="${ipad.name} 더 알아보기">더 알아보기</a>
+      <a href="${toProjectUrl(ipad.url)}" class="btn" aria-label="${ipad.name} 구입하기">구입하기</a>
+      <a href="${toProjectUrl(ipad.url)}" class="link" aria-label="${ipad.name} 더 알아보기">더 알아보기</a>
     `
 
     itemsEl.append(itemEl)
@@ -2250,13 +2600,13 @@ const initFooterNavigation = () => {
     navigationsEl.innerHTML = ''
 
     navigations.forEach((navigation, index) => {
-      const mapEl = document.createElement('div')
+      const mapEl = document.createElement('section')
       const listId = `footer-navigation-list-${index + 1}`
       const mapList = navigation.maps
         .map(
           (map) => /* html */ `
             <li>
-              <a href="${toAbsoluteAppleUrl(map.url)}">${map.name}</a>
+              <a href="${toProjectUrl(map.url)}">${map.name}</a>
             </li>
           `
         )
@@ -2463,10 +2813,13 @@ const initHeroIntro = () => {
   window.addEventListener('resize', syncHeroMotionVars)
 }
 
+normalizeProjectAnchors()
 initHeaderAndNavigation()
 initIntersectionReveal()
 initStageVideoControls()
+initDesignVideoTransition()
 renderCompareSection()
 initFooterNavigation()
 initHeroIntro()
+normalizeProjectAnchors()
 

@@ -5,7 +5,7 @@ export default [
     name: 'iPad Pro',
     tagline: '최첨단 기술이 구현하는<br />궁극의 iPad 경험.',
     price: 1599000,
-    url: '/ipad-pro/'
+    url: '/buy/ipad-pro'
   },
   {
     thumbnail: './images/compare_ipad_air.png',
@@ -13,7 +13,7 @@ export default [
     name: 'iPad Air',
     tagline: '얇고 가벼운 디자인.<br />결코 가볍지 않은 성능.',
     price: 949000,
-    url: '/ipad-air/'
+    url: '/buy/ipad-air'
   },
   {
     thumbnail: './images/compare_ipad_10_2.png',
@@ -21,7 +21,7 @@ export default [
     name: 'iPad',
     tagline: '매일매일 여러 일을 척척.<br />널찍한 화면. 화사한 색상',
     price: 529000,
-    url: '/ipad-10.9/'
+    url: '/buy/ipad-11'
   },
   {
     thumbnail: './images/compare_ipad_mini.png',
@@ -29,6 +29,6 @@ export default [
     name: 'iPad mini',
     tagline: 'iPad다운 경험은 그대로.<br />휴대성은 최대로.',
     price: 749000,
-    url: '/ipad-mini/'
+    url: '/buy/ipad-mini'
   }
 ]
