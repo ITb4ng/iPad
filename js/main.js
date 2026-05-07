@@ -66,6 +66,19 @@ const PROJECT_ROUTE_ALIASES = Object.freeze({
   '/sitemap': '/sitemap'
 })
 
+const GLOBAL_NAVIGATION_ITEMS = Object.freeze([
+  { label: '스토어', path: '/store' },
+  { label: 'Mac', path: '/mac' },
+  { label: 'iPad', path: '/ipad', isCurrent: true },
+  { label: 'iPhone', path: '/iphone' },
+  { label: 'Watch', path: '/watch' },
+  { label: 'AirPods', path: '/airpods' },
+  { label: 'TV 및 홈', path: '/tv-home' },
+  { label: 'Apple Store', path: '/apple-store' },
+  { label: '액세서리', path: '/accessories' },
+  { label: '고객지원', path: '/support' }
+])
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -2668,6 +2681,88 @@ const initFooterNavigation = () => {
   syncFooterNavigationState()
 }
 
+const initErrorPage = () => {
+  if (!bodyEl.classList.contains('error-page-body')) {
+    return
+  }
+
+  const homeUrl = '/index.html'
+  const historyBackButtonEl = document.querySelector('[data-history-back]')
+  const homeLinkEls = [...document.querySelectorAll('[data-error-home]')]
+  const homeSectionLinkEls = [...document.querySelectorAll('[data-error-home-section]')]
+  const footerNavigationLinkEls = [...document.querySelectorAll('footer .navigations a[href]')]
+
+  homeLinkEls.forEach((linkEl) => {
+    linkEl.setAttribute('href', homeUrl)
+  })
+
+  homeSectionLinkEls.forEach((linkEl) => {
+    const sectionId = linkEl.getAttribute('data-error-home-section')
+
+    if (!sectionId) {
+      linkEl.setAttribute('href', homeUrl)
+      return
+    }
+
+    linkEl.setAttribute('href', `${homeUrl}#${sectionId}`)
+  })
+
+  footerNavigationLinkEls.forEach((linkEl) => {
+    linkEl.setAttribute('href', homeUrl)
+  })
+
+  historyBackButtonEl?.addEventListener('click', () => {
+    const canGoBack = window.history.length > 1 && document.referrer && document.referrer !== window.location.href
+
+    if (canGoBack) {
+      window.history.back()
+      return
+    }
+
+    window.location.assign(homeUrl)
+  })
+}
+
+const initGlobalNavigationMenus = () => {
+  const globalMenuEl = document.querySelector('[data-global-menu]')
+  const mobileMenuEl = document.querySelector('[data-mobile-menu]')
+
+  if (!globalMenuEl && !mobileMenuEl) {
+    return
+  }
+
+  const isErrorPage = bodyEl.classList.contains('error-page-body')
+  const homeUrl = '/index.html'
+  const getItemHref = (path) => (isErrorPage ? homeUrl : path)
+
+  if (globalMenuEl) {
+    const desktopMenuMarkup = GLOBAL_NAVIGATION_ITEMS
+      .map(({ label, path, isCurrent }) => {
+        const currentPageMarkup = isCurrent ? ' aria-current="page"' : ''
+        return `<li><a href="${getItemHref(path)}"${currentPageMarkup}>${label}</a></li>`
+      })
+      .join('')
+
+    globalMenuEl.insertAdjacentHTML(
+      'afterbegin',
+      `<li class="apple-logo"><a href="${homeUrl}">Apple</a></li>${desktopMenuMarkup}`
+    )
+  }
+
+  if (mobileMenuEl) {
+    mobileMenuEl.innerHTML = GLOBAL_NAVIGATION_ITEMS
+      .map(({ label, path, isCurrent }, index) => {
+        const currentPageMarkup = isCurrent ? ' aria-current="page"' : ''
+        return /* html */ `
+          <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: ${index}; --mobile-panel-item-index: ${index}">
+            <a href="${getItemHref(path)}"${currentPageMarkup}>${label}</a>
+          </li>
+        `
+      })
+      .join('')
+  }
+}
+
 const initHeroIntro = () => {
   const heroEl = document.querySelector('.hero')
 
@@ -2813,7 +2908,9 @@ const initHeroIntro = () => {
   window.addEventListener('resize', syncHeroMotionVars)
 }
 
+initGlobalNavigationMenus()
 normalizeProjectAnchors()
+initErrorPage()
 initHeaderAndNavigation()
 initIntersectionReveal()
 initStageVideoControls()

@@ -32,8 +32,9 @@ Apple Korea의 iPad 제품 소개 페이지를 참고해 제작한 정적 프론
 ```text
 apple_project_ipad/
 ├─ index.html
-├─ main.css
-├─ reset.css
+├─ styles/
+│  ├─ main.css
+│  └─ reset.css
 ├─ data/
 │  ├─ ipads.js
 │  └─ navigations.js
@@ -71,7 +72,7 @@ apple_project_ipad/
 - 페이지 전체 마크업
 - Hero, Power, Display, Camera, Accessories, Compare, Footer 등 주요 섹션 구성
 
-### `main.css`
+### `styles/main.css`
 
 - 전체 레이아웃 및 반응형 스타일
 - Hero 섹션 인터랙션 스타일
