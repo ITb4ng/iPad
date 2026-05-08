@@ -234,11 +234,6 @@
         <div class="hero__orb hero__orb--yellow"></div>
         <figure class="hero__hardware">
           <img src="./images/hero.png" alt="블루, 핑크, 옐로, 실버 색상의 iPad와 Magic Keyboard Folio" />
-          <figcaption aria-hidden="true">
-            <span>Touch ID</span>
-            <span>A16 칩</span>
-            <span>128GB부터</span>
-          </figcaption>
         </figure>
       </div>
       <div class="hero__copy">
@@ -265,12 +260,6 @@
         <div class="hero__body">
           <p class="hero__subhead">전면적으로 즐거운 iPad.</p>
           <p class="hero__description">이제 초고속 A16 칩 탑재. 그 어느 때보다 넉넉한 저장 용량. 시선을 사로잡는 Liquid Retina 디스플레이와 전면 화면 디자인까지.</p>
-          <!-- [A11Y 추가] aria-label 한글화 -->
-          <ul class="hero__highlights" aria-label="iPad 핵심 특징">
-            <li>27.6cm Liquid Retina 디스플레이</li>
-            <li>A16 칩</li>
-            <li>128GB부터 시작</li>
-          </ul>
           <div class="links hero__links">
             <a href="/buy" class="link">iPad 11 구입하기</a>
             <a href="#ar" class="link">AR로 iPad 보기</a>
@@ -280,67 +269,6 @@
     </div>
   </section>
   <!-- Hero End -->
-
-
-  <!--
-  <section class="power" aria-labelledby="power-title">
-    <div class="inner">
-
-      <div class="multiple-apps">
-        <h2 class="bgtext" id="power-title">거침없는 처리 성능</h2>
-        <div class="figures">
-          <figure>
-            <img src="./images/power_multiple_apps.png" alt="Keynote 문서와 메시지가 화면에 동시에 표시된 모습" />
-            <figcaption class="bgtext" aria-hidden="true">동시에 여러 앱 사용 가능</figcaption>
-          </figure>
-        </div>
-      </div>
-
-      <div class="arcade feature">
-        <div class="figures">
-          <figure>
-            <img src="./images/power_arcade.png" alt="iPad에 Wonderbox 게임이 열려 있는 모습" />
-            <figcaption class="bgtext" aria-hidden="true">마음껏 즐기는 Apple Arcade 게임</figcaption>
-          </figure>
-        </div>
-        <div class="infos infos--center">
-          <div class="info">
-            <div class="icon icon--chip" aria-hidden="true"></div>
-            <p>A16 칩은 메시지 전송, 웹 서핑, 여러 앱 동시 사용 등 모든 작업에서 빠르고 부드러운 반응성을 선사합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--faster" aria-hidden="true"></div>
-            <p>향상된 그래픽 성능으로 몰입감 넘치는 게임과 고성능 앱을 한층 더 쾌적하게 즐길 수 있습니다.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="create feature">
-        <div class="infos infos--end">
-          <div class="info">
-            <div class="icon icon--neural" aria-hidden="true"></div>
-            <p>강력한 Neural Engine은 라이브 텍스트 같은 머신 러닝 기반 기능을 더 똑똑하게 구현합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--apps" aria-hidden="true"></div>
-            <p>A16 칩은 Adobe Fresco, Procreate 같은 고성능 창작 앱도 부드럽게 구동합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--battery" aria-hidden="true"></div>
-            <p>온종일 가는 배터리를 갖춘 iPad. 작업 중에도, 게임 중에도, 이동 중에도 든든하게 함께합니다.</p>
-          </div>
-        </div>
-        <div class="figures">
-          <figure>
-            <img src="images/power_create.jpg" alt="Procreate에서 Apple Pencil로 그림을 그리고 있는 모습" />
-            <figcaption class="bgtext" aria-hidden="true">찍고 그리고 편집하고</figcaption>
-          </figure>
-        </div>
-      </div>
-
-    </div>
-  </section>
-  -->
 
   <section class="section-design" id="design" aria-labelledby="design-title">
     <div class="inner design__inner">
@@ -616,15 +544,30 @@
         </div>
         <div class="figures">
           <figure>
-            <img src="./images/camera_hardware.png" alt="iPad로 화상 통화를 하며 센터 스테이지 기능을 사용하는 모습" />
-            <!-- [A11Y 추가] 영상은 보조 시각 요소이므로 이미지 설명과 중복되지 않게 유지 -->
-            <video
-              id="center-stage-video"
-              data-src="./video/camera/camera-center-stage-video.mp4"
-              muted
-              playsinline
-              preload="none"
-              aria-hidden="true"></video>
+            <div class="camera__device">
+              <!-- [A11Y 추가] 영상은 보조 시각 요소이므로 이미지 설명과 중복되지 않게 유지 -->
+              <div class="camera__screen" aria-hidden="true">
+                <img
+                  class="camera__stage-startframe"
+                  data-stage-video-startframe
+                  src="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_startframe__e8rpj12dc06e_large.jpg"
+                  alt=""
+                  aria-hidden="true">
+                <video
+                  id="center-stage-video"
+                  class="camera__stage-video"
+                  data-src="https://www.apple.com/105/media/us/ipad-11/2025/21af9618-666d-4368-9fb9-38822c35dc35/anim/center-stage/large.mp4"
+                  muted
+                  playsinline
+                  preload="none"
+                  poster="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_startframe__e8rpj12dc06e_large.jpg"
+                  aria-hidden="true"></video>
+              </div>
+              <img
+                class="camera__device-frame"
+                src="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_hardware__f29ycxkbune6_large.png"
+                alt="iPad로 화상 통화를 하며 센터 스테이지 기능을 사용하는 모습" />
+            </div>
             <button type="button" class="controller--play" aria-controls="center-stage-video">
               재생 <img src="./images/video-play.svg" alt="" aria-hidden="true">
             </button>

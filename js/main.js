@@ -2327,7 +2327,8 @@ const ensureDeferredVideoLoaded = (videoEl) => {
 }
 
 const initStageVideoControls = () => {
-  const stageVideoEl = document.querySelector('.stage video')
+  const stageVideoEl = document.querySelector('.stage .camera__stage-video')
+  const stageStartframeEl = document.querySelector('.stage [data-stage-video-startframe]')
   const playBtnEl = document.querySelector('.stage .controller--play')
   const pauseBtnEl = document.querySelector('.stage .controller--pause')
   const stageSectionEl = document.querySelector('.camera .stage')
@@ -2341,6 +2342,14 @@ const initStageVideoControls = () => {
   let hasAutoPlayed = false
   let hasPlaybackEnded = false
   let hasPendingAutoplay = false
+
+  const syncStageVisualState = (isPlaying) => {
+    stageSectionEl.classList.toggle('is-stage-video-active', isPlaying)
+
+    if (stageStartframeEl instanceof HTMLImageElement) {
+      stageStartframeEl.toggleAttribute('hidden', isPlaying)
+    }
+  }
 
   const syncControls = (isPlaying) => {
     playBtnEl.classList.toggle('hide', isPlaying)
@@ -2361,7 +2370,7 @@ const initStageVideoControls = () => {
     }
 
     ensureVideoLoaded()
-    hasPendingAutoplay = auto
+    hasPendingAutoplay = true
 
     if (hasPlaybackEnded && !auto) {
       stageVideoEl.currentTime = 0
@@ -2385,18 +2394,19 @@ const initStageVideoControls = () => {
 
   stageVideoEl.addEventListener('play', () => {
     hasPendingAutoplay = false
+    syncStageVisualState(true)
     syncControls(true)
   })
 
   stageVideoEl.addEventListener('pause', () => {
-    if (!hasPlaybackEnded) {
-      syncControls(false)
-    }
+    syncControls(false)
   })
 
   stageVideoEl.addEventListener('ended', () => {
     hasPlaybackEnded = true
     hasPendingAutoplay = false
+    stageVideoEl.currentTime = 0
+    syncStageVisualState(false)
     syncControls(false)
   })
 
@@ -2414,8 +2424,10 @@ const initStageVideoControls = () => {
 
   pauseBtnEl.addEventListener('click', () => {
     stageVideoEl.pause()
-    syncControls(false)
   })
+
+  syncStageVisualState(false)
+  syncControls(false)
 
   if (!canUseIntersectionObserver) {
     playStageVideo({ auto: true })

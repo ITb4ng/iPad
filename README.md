@@ -34,7 +34,6 @@ apple_project_ipad/
 ├─ index.html
 ├─ styles/
 │  ├─ main.css
-│  └─ reset.css
 ├─ data/
 │  ├─ ipads.js
 │  └─ navigations.js
