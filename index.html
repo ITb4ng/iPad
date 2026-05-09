@@ -21,8 +21,8 @@
       property="og:description"
       content="Apple iPad 11 제품 페이지를 바탕으로 레이아웃, 모션, 반응형, 접근성을 다시 다듬은 퍼블리싱 리빌드 프로젝트입니다.">
     <meta property="og:url" content="/">
-    <meta property="og:image" content="/images/head-seo.png">
-    <meta property="og:image:secure_url" content="/images/head-seo.png">
+    <meta property="og:image" content="/images/ipad-seo.png">
+    <meta property="og:image:secure_url" content="/images/ipad-seo.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -34,12 +34,14 @@
     <meta
       name="twitter:description"
       content="Apple iPad 11 제품 페이지를 바탕으로 레이아웃, 모션, 반응형, 접근성을 다시 다듬은 퍼블리싱 리빌드 프로젝트입니다.">
-    <meta name="twitter:image" content="/images/head-seo.png">
+    <meta name="twitter:image" content="/images/ipad-seo.png">
     <meta name="twitter:image:alt" content="iPad 11 리빌드 프로젝트 대표 이미지">
     <meta name="twitter:url" content="/">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reset-css@5.0.1/reset.min.css">
-    <link rel="stylesheet" href="/main.css">
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/header.css">
+    <link rel="stylesheet" href="/styles/footer.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -55,18 +57,7 @@
       <nav class="global-nav" aria-label="전역">
       
       <!-- 데스크탑 메뉴 -->
-      <ul class="menu">
-        <li class="apple-logo"><a href="./index.html">Apple</a></li>
-        <li><a href="/store">스토어</a></li>
-        <li><a href="/mac">Mac</a></li>
-        <li><a href="/ipad" aria-current="page">iPad</a></li>
-        <li><a href="/iphone">iPhone</a></li>
-        <li><a href="/watch">Watch</a></li>
-        <li><a href="/airpods">AirPods</a></li>
-        <li><a href="/tv-home">TV 및 홈</a></li>
-        <li><a href="/apple-store">Apple Store</a></li>
-        <li><a href="/accessories">액세서리</a></li>
-        <li><a href="/support">고객지원</a></li>
+      <ul class="menu" data-global-menu>
         <li class="search-starter">
           <button type="button" data-panel-trigger="search" aria-label="검색 메뉴 열기" aria-controls="header-search-flyout" aria-expanded="false" aria-haspopup="dialog">검색</button>
         </li>
@@ -201,18 +192,7 @@
               <button type="button" class="global-mobile-panel__close mobile-panel-close mobile-menu-close" data-mobile-panel-close="menu" aria-label="전역메뉴 닫기"></button>
             </div>
             <div class="global-mobile-panel__body global-mobile-panel__body--menu">
-              <ul aria-labelledby="global-mobile-menu-title">
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 0; --mobile-panel-item-index: 0"><a href="/store">스토어</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 1; --mobile-panel-item-index: 1"><a href="/mac">Mac</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 2; --mobile-panel-item-index: 2"><a href="/ipad" aria-current="page">iPad</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 3; --mobile-panel-item-index: 3"><a href="/iphone">iPhone</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 4; --mobile-panel-item-index: 4"><a href="/watch">Watch</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 5; --mobile-panel-item-index: 5"><a href="/airpods">AirPods</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 6; --mobile-panel-item-index: 6"><a href="/tv-home">TV 및 홈</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 7; --mobile-panel-item-index: 7"><a href="/apple-store">Apple Store</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 8; --mobile-panel-item-index: 8"><a href="/accessories">액세서리</a></li>
-                <li class="mobile-menu-item mobile-panel-item" style="--mobile-menu-item-index: 9; --mobile-panel-item-index: 9"><a href="/support">고객지원</a></li>
-              </ul>
+              <ul aria-labelledby="global-mobile-menu-title" data-mobile-menu></ul>
             </div>
           </div>
         </div>
@@ -255,12 +235,7 @@
         <div class="hero__orb hero__orb--pink"></div>
         <div class="hero__orb hero__orb--yellow"></div>
         <figure class="hero__hardware">
-          <img src="./images/hero.png" alt="블루, 핑크, 옐로, 실버 색상의 iPad와 Magic Keyboard Folio" />
-          <figcaption aria-hidden="true">
-            <span>Touch ID</span>
-            <span>A16 칩</span>
-            <span>128GB부터</span>
-          </figcaption>
+          <img src="./images/hero/hero-main.png" alt="블루, 핑크, 옐로, 실버 색상의 iPad와 Magic Keyboard Folio" />
         </figure>
       </div>
       <div class="hero__copy">
@@ -287,12 +262,6 @@
         <div class="hero__body">
           <p class="hero__subhead">전면적으로 즐거운 iPad.</p>
           <p class="hero__description">이제 초고속 A16 칩 탑재. 그 어느 때보다 넉넉한 저장 용량. 시선을 사로잡는 Liquid Retina 디스플레이와 전면 화면 디자인까지.</p>
-          <!-- [A11Y 추가] aria-label 한글화 -->
-          <ul class="hero__highlights" aria-label="iPad 핵심 특징">
-            <li>27.6cm Liquid Retina 디스플레이</li>
-            <li>A16 칩</li>
-            <li>128GB부터 시작</li>
-          </ul>
           <div class="links hero__links">
             <a href="/buy" class="link">iPad 11 구입하기</a>
             <a href="#ar" class="link">AR로 iPad 보기</a>
@@ -302,67 +271,6 @@
     </div>
   </section>
   <!-- Hero End -->
-
-
-  <!--
-  <section class="power" aria-labelledby="power-title">
-    <div class="inner">
-
-      <div class="multiple-apps">
-        <h2 class="bgtext" id="power-title">거침없는 처리 성능</h2>
-        <div class="figures">
-          <figure>
-            <img src="./images/power_multiple_apps.png" alt="Keynote 문서와 메시지가 화면에 동시에 표시된 모습" />
-            <figcaption class="bgtext" aria-hidden="true">동시에 여러 앱 사용 가능</figcaption>
-          </figure>
-        </div>
-      </div>
-
-      <div class="arcade feature">
-        <div class="figures">
-          <figure>
-            <img src="./images/power_arcade.png" alt="iPad에 Wonderbox 게임이 열려 있는 모습" />
-            <figcaption class="bgtext" aria-hidden="true">마음껏 즐기는 Apple Arcade 게임</figcaption>
-          </figure>
-        </div>
-        <div class="infos infos--center">
-          <div class="info">
-            <div class="icon icon--chip" aria-hidden="true"></div>
-            <p>A16 칩은 메시지 전송, 웹 서핑, 여러 앱 동시 사용 등 모든 작업에서 빠르고 부드러운 반응성을 선사합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--faster" aria-hidden="true"></div>
-            <p>향상된 그래픽 성능으로 몰입감 넘치는 게임과 고성능 앱을 한층 더 쾌적하게 즐길 수 있습니다.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="create feature">
-        <div class="infos infos--end">
-          <div class="info">
-            <div class="icon icon--neural" aria-hidden="true"></div>
-            <p>강력한 Neural Engine은 라이브 텍스트 같은 머신 러닝 기반 기능을 더 똑똑하게 구현합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--apps" aria-hidden="true"></div>
-            <p>A16 칩은 Adobe Fresco, Procreate 같은 고성능 창작 앱도 부드럽게 구동합니다.</p>
-          </div>
-          <div class="info">
-            <div class="icon icon--battery" aria-hidden="true"></div>
-            <p>온종일 가는 배터리를 갖춘 iPad. 작업 중에도, 게임 중에도, 이동 중에도 든든하게 함께합니다.</p>
-          </div>
-        </div>
-        <div class="figures">
-          <figure>
-            <img src="images/power_create.jpg" alt="Procreate에서 Apple Pencil로 그림을 그리고 있는 모습" />
-            <figcaption class="bgtext" aria-hidden="true">찍고 그리고 편집하고</figcaption>
-          </figure>
-        </div>
-      </div>
-
-    </div>
-  </section>
-  -->
 
   <section class="section-design" id="design" aria-labelledby="design-title">
     <div class="inner design__inner">
@@ -586,7 +494,7 @@
         </h2>
         <div class="figures">
           <figure>
-            <img src="./images/display_notes.jpg" alt="iPad에서 Goodnotes 5로 필기 중인 모습" />
+            <img src="./images/display/display-notes.jpg" alt="iPad에서 Goodnotes 5로 필기 중인 모습" />
             <figcaption class="bgtext" aria-hidden="true">필기와 노트 작성은 GoodNotes 5로</figcaption>
           </figure>
         </div>
@@ -595,7 +503,7 @@
       <div class="shareplay feature">
         <div class="figures">
           <figure>
-            <img src="./images/display_shareplay.png" alt="SharePlay 기능으로 영상을 함께 즐기는 모습" />
+            <img src="./images/display/display-shareplay.png" alt="SharePlay 기능으로 영상을 함께 즐기는 모습" />
             <figcaption class="bgtext" aria-hidden="true">함께 보고 함께 즐기고</figcaption>
           </figure>
         </div>
@@ -638,20 +546,35 @@
         </div>
         <div class="figures">
           <figure>
-            <img src="./images/camera_hardware.png" alt="iPad로 화상 통화를 하며 센터 스테이지 기능을 사용하는 모습" />
-            <!-- [A11Y 추가] 영상은 보조 시각 요소이므로 이미지 설명과 중복되지 않게 유지 -->
-            <video
-              id="center-stage-video"
-              data-src="./video/camera/camera-center-stage-video.mp4"
-              muted
-              playsinline
-              preload="none"
-              aria-hidden="true"></video>
+            <div class="camera__device">
+              <!-- [A11Y 추가] 영상은 보조 시각 요소이므로 이미지 설명과 중복되지 않게 유지 -->
+              <div class="camera__screen" aria-hidden="true">
+                <img
+                  class="camera__stage-startframe"
+                  data-stage-video-startframe
+                  src="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_startframe__e8rpj12dc06e_large.jpg"
+                  alt=""
+                  aria-hidden="true">
+                <video
+                  id="center-stage-video"
+                  class="camera__stage-video"
+                  data-src="https://www.apple.com/105/media/us/ipad-11/2025/21af9618-666d-4368-9fb9-38822c35dc35/anim/center-stage/large.mp4"
+                  muted
+                  playsinline
+                  preload="none"
+                  poster="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_startframe__e8rpj12dc06e_large.jpg"
+                  aria-hidden="true"></video>
+              </div>
+              <img
+                class="camera__device-frame"
+                src="https://www.apple.com/v/ipad-11/d/images/overview/connect/center_stage_hardware__f29ycxkbune6_large.png"
+                alt="iPad로 화상 통화를 하며 센터 스테이지 기능을 사용하는 모습" />
+            </div>
             <button type="button" class="controller--play" aria-controls="center-stage-video">
-              재생 <img src="./images/video-play.svg" alt="" aria-hidden="true">
+              재생 <img src="./images/common/video-play.svg" alt="" aria-hidden="true">
             </button>
             <button type="button" class="controller--pause hide" aria-controls="center-stage-video">
-              일시 정지 <img src="./images/video-pause.svg" alt="" aria-hidden="true">
+              일시 정지 <img src="./images/common/video-pause.svg" alt="" aria-hidden="true">
             </button>
             <figcaption class="bgtext" aria-hidden="true">센터 스테이지로 언제나 대화의 중심에</figcaption>
           </figure>
@@ -677,7 +600,7 @@
         </div>
         <div class="figures">
           <figure>
-            <img src="./images/camera_edit.jpg" alt="iPad에서 사진과 영상을 편집 중인 모습" />
+            <img src="./images/camera/camera-edit.jpg" alt="iPad에서 사진과 영상을 편집 중인 모습" />
             <figcaption class="bgtext" aria-hidden="true">사진도 영상도 찍고 편집하고</figcaption>
           </figure>
         </div>
@@ -695,7 +618,7 @@
           <h2 class="bgtext">늘 가까이. 늘 중심에서.</h2>
           <div class="figures">
             <figure>
-              <img src="./images/wireless_facetime.jpg" alt="여러 명이 참여 중인 FaceTime 화상 통화" />
+              <img src="./images/wireless/wireless-facetime.jpg" alt="여러 명이 참여 중인 FaceTime 화상 통화" />
               <figcaption class="bgtext" aria-hidden="true">
                 FaceTime으로 소통하고
               </figcaption>
@@ -722,7 +645,7 @@
 
           <div class="figures">
             <figure>
-              <img src="images/wireless_files.png" alt="파일 앱과 iCloud Drive가 열린 화면" />
+              <img src="images/wireless/wireless-files.png" alt="파일 앱과 iCloud Drive가 열린 화면" />
               <figcaption class="bgtext" aria-hidden="true">모든 파일 확인하고 이동 중에도</figcaption>
             </figure>
           </div>
@@ -741,7 +664,7 @@
         <h2 class="bgtext">손으로 하거나 키보드로 하거나.</h2>
         <div class="figures">
           <figure>
-            <img src="/images/accessories.jpg" alt="Apple Pencil과 키보드 액세서리를 연결한 iPad에서 메일과 메모 앱을 함께 사용하는 모습" />
+            <img src="/images/accessories/accessories.jpg" alt="Apple Pencil과 키보드 액세서리를 연결한 iPad에서 메일과 메모 앱을 함께 사용하는 모습" />
             <figcaption class="bgtext" aria-hidden="true">
               <div class="caption-memo">메일에 답장하고 메모를 적고</div>
               <div class="caption-supports">SMART KEYBOARD 및 APPLE PENCIL 지원</div>
@@ -803,19 +726,19 @@
         <div class="figures">
           <div class="figure-split-view">
             <figure>
-              <img src="/images/ipados_split_view.png" alt="두 개의 앱을 나란히 열고 작업하는 모습" />
+              <img src="/images/ipados/ipados-split-view.png" alt="두 개의 앱을 나란히 열고 작업하는 모습" />
               <figcaption class="bgtext" aria-hidden="true">두 개의 앱을 나란히 열고 작업하기</figcaption>
             </figure>
           </div>
           <div class="figure-widgets">
             <figure>
-              <img src="/images/ipados_widgets.png" alt="홈 화면 위젯이 보이는 iPad 화면" />
+              <img src="/images/ipados/ipados-widgets.png" alt="홈 화면 위젯이 보이는 iPad 화면" />
               <figcaption class="bgtext" aria-hidden="true">홈 화면에서 바로 보는 위젯</figcaption>
             </figure>
           </div>
           <div class="figure-quick-note">
             <figure>
-              <img src="/images/ipados_quick_note.png" alt="빠른 메모 기능을 사용하는 모습" />
+              <img src="/images/ipados/ipados-quick-note.png" alt="빠른 메모 기능을 사용하는 모습" />
               <figcaption class="bgtext" aria-hidden="true">빠르게 메모하기</figcaption>
             </figure>
           </div>
@@ -842,19 +765,19 @@
         <div class="figures">
           <div class="figure-masterclass">
             <figure>
-              <img src="/images/apps_masterclass.png" alt="iPad에서 MasterClass 앱을 사용하는 모습" />
+              <img src="/images/apps/apps-masterclass.png" alt="iPad에서 MasterClass 앱을 사용하는 모습" />
               <figcaption class="bgtext" aria-hidden="true">Masterclass</figcaption>
             </figure>
           </div>
           <div class="figure-adobe">
             <figure>
-              <img src="/images/apps_adobe.png" alt="iPad에서 Adobe Fresco 앱을 사용하는 모습" />
+              <img src="/images/apps/apps-adobe.png" alt="iPad에서 Adobe Fresco 앱을 사용하는 모습" />
               <figcaption class="bgtext" aria-hidden="true">Adobe Fresco</figcaption>
             </figure>
           </div>
           <div class="figure-fantasian">
             <figure>
-              <img src="/images/apps_fantasian.png" alt="iPad에서 Fantasian 게임을 즐기는 모습" />
+              <img src="/images/apps/apps-fantasian.png" alt="iPad에서 Fantasian 게임을 즐기는 모습" />
               <figcaption class="bgtext" aria-hidden="true">Fantasian</figcaption>
             </figure>
           </div>
@@ -862,13 +785,13 @@
         <div class="figures">
           <div class="figure-books">
             <figure>
-              <img src="/images/apps_books.png" alt="iPad에서 도서 앱을 보는 모습" />
+              <img src="/images/apps/apps-books.png" alt="iPad에서 도서 앱을 보는 모습" />
               <figcaption class="bgtext" aria-hidden="true">도서</figcaption>
             </figure>
           </div>
           <div class="figure-goodnotes">
             <figure>
-              <img src="/images/apps_goodnotes.png" alt="iPad에서 GoodNotes 5 앱을 사용하는 모습" />
+              <img src="/images/apps/apps-goodnotes.png" alt="iPad에서 GoodNotes 5 앱을 사용하는 모습" />
               <figcaption class="bgtext" aria-hidden="true">GoodNotes 5</figcaption>
             </figure>
           </div>
@@ -897,7 +820,7 @@
         </div>
         <div class="figures">
           <figure>
-            <img src="/images/privacy.jpg" alt="Safari 개인정보 보호 화면" />
+            <img src="/images/privacy/privacy.jpg" alt="Safari 개인정보 보호 화면" />
             <figcaption class="bgtext" aria-hidden="true">
               <div class="caption-apple-id">Apple로 로그인</div>
               <div class="caption-touch-id">Touch ID로 잠금 해제</div>
@@ -925,7 +848,7 @@
         </div>
         <div class="figures">
           <figure>
-            <img src="/images/accessibility.jpg" alt="FaceTime으로 수어 통화를 하는 모습" />
+            <img src="/images/accessibility/accessibility.jpg" alt="FaceTime으로 수어 통화를 하는 모습" />
           </figure>
         </div>
 
@@ -941,12 +864,12 @@
 
           <div>
             <!-- [A11Y 추가] 의미 없는 장식 아이콘은 숨김 -->
-            <img src="/images/ar_icon.png" alt="" aria-hidden="true" class="icon" />
+            <img src="/images/ar/ar-icon.png" alt="" aria-hidden="true" class="icon" />
             <h2>AR로 iPad 미리 보기.</h2>
             <p>iPhone 또는 iPad에서 이 페이지를 Safari로 열어보세요.</p>
           </div>
           <!-- [A11Y 추가] 실제 정보 이미지이므로 alt 구체화 -->
-          <img src="/images/ar_ipad_new.jpg" alt="AR로 공간 위에 배치된 iPad 미리보기 이미지" class="image" />
+          <img src="/images/ar/ar-ipad-new.jpg" alt="AR로 공간 위에 배치된 iPad 미리보기 이미지" class="image" />
 
         </div>
       </div>
@@ -958,7 +881,7 @@
     <section class="environment" id="environment">
       <div class="whitebox">
 
-        <img src="/images/environment_icon.png" alt="" aria-hidden="true" class="icon" />
+        <img src="/images/environment/environment-icon.png" alt="" aria-hidden="true" class="icon" />
         <h2>iPad 그리고 환경.</h2>
         <p>
           Apple은 제품의 전체 수명 주기에 걸쳐 환경에 미치는 영향을 줄이기 위해 노력합니다. 재활용 소재 사용부터 포장, 에너지 효율까지 더 지속 가능한 방향으로 iPad를 설계하고 있죠.
@@ -981,7 +904,7 @@
           </h2>
           <p>케이스, 커버, Apple Pencil, AirPods 등 다양한 액세서리로 iPad 경험을 더 풍성하게 만들어보세요.</p>
           <a href="/shop/accessories" class="link">iPad 액세서리 쇼핑하기</a>
-          <img src="/images/ipad_accessories.jpg" alt="다양한 iPad 액세서리 이미지" />
+          <img src="/images/ipad_accessories/accessories.jpg" alt="다양한 iPad 액세서리 이미지" />
           
         </div>
       </div>
@@ -1030,7 +953,7 @@
 
         <div class="buy-info">
           <div>
-            <img class="icon" src="./images/buy-info-box.svg" alt="" aria-hidden="true" />
+            <img class="icon" src="./images/footer/buy-info-box.svg" alt="" aria-hidden="true" />
             <h3>업무일 기준 무료 익일 배송</h3>
             <p>
               오후 3시 이전에 주문한 재고 보유 제품에 한해<br />
@@ -1039,7 +962,7 @@
             <a href="#how-to-shop" class="link">더 알아보기</a>
           </div>
           <div>
-            <img class="icon" src="./images/buy-info-won.svg" alt="" aria-hidden="true" />
+            <img class="icon" src="./images/footer/buy-info-won.svg" alt="" aria-hidden="true" />
             <h3>금융 혜택</h3>
             <p>
               무이자 할부를 통해 Apple 제품을<br />
@@ -1048,7 +971,7 @@
             <a href="#trade" class="link">더 알아보기</a>
           </div>
           <div>
-            <img class="icon" src="./images/buy-info-engrave.svg" alt="" aria-hidden="true" />
+            <img class="icon" src="./images/footer/buy-info-engrave.svg" alt="" aria-hidden="true" />
             <h3>진정 자신만의 것으로</h3>
             <p>
               자신만의 이름이나 개성 있는 문구를<br />
