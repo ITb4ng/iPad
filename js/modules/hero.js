@@ -1,5 +1,5 @@
-import { BREAKPOINTS, HERO_COPY, HERO_STATE_CLASSES, HERO_TIMING } from '../shared/config.js'
-import { setText, setTextList } from '../shared/dom.js'
+import { BREAKPOINTS, HERO_COPY, HERO_STATE_CLASSES, HERO_TIMING } from '../common/config.js'
+import { setText, setTextList } from '../common/dom.js'
 
 export const initHeroIntro = () => {
   const heroEl = document.querySelector('.hero')

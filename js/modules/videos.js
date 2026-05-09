@@ -1,4 +1,4 @@
-import { prefersReducedMotion } from '../shared/dom.js'
+import { prefersReducedMotion } from '../common/dom.js'
 
 const supportsIntersectionObserver = () => typeof window.IntersectionObserver === 'function'
 

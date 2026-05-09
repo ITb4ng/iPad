@@ -6,7 +6,7 @@ import { initHeaderAndNavigation } from './modules/header-navigation.js'
 import { initHeroIntro } from './modules/hero.js'
 import { initIntersectionReveal } from './modules/reveal.js'
 import { initDesignVideoTransition, initStageVideoControls } from './modules/videos.js'
-import { normalizeProjectAnchors } from './shared/dom.js'
+import { normalizeProjectAnchors } from './common/dom.js'
 
 // 1. HTML에 이미 있는 공통 링크를 프로젝트 경로로 정리합니다.
 normalizeProjectAnchors()

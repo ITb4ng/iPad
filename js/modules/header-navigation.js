@@ -5,7 +5,7 @@ import {
   HEADER_REVEAL_CONFIG,
   MOBILE_MENU_CONFIG,
   SEARCH_CONFIG
-} from '../shared/config.js'
+} from '../common/config.js'
 import {
   bodyEl,
   getNextFocusableElement,
@@ -20,7 +20,7 @@ import {
   setHiddenState,
   setTransitionDelays,
   syncBrowserTopOffset
-} from '../shared/dom.js'
+} from '../common/dom.js'
 
 export const initHeaderAndNavigation = () => {
   const headerEl = document.querySelector('header')

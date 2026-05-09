@@ -1,4 +1,4 @@
-import { bodyEl } from '../shared/dom.js'
+import { bodyEl } from '../common/dom.js'
 
 const HOME_URL = '/index.html'
 

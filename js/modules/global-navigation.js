@@ -1,5 +1,5 @@
-import { GLOBAL_NAVIGATION_ITEMS } from '../shared/config.js'
-import { bodyEl } from '../shared/dom.js'
+import { GLOBAL_NAVIGATION_ITEMS } from '../common/config.js'
+import { bodyEl } from '../common/dom.js'
 
 const getNavigationHref = (path) => {
   const isErrorPage = bodyEl.classList.contains('error-page-body')

@@ -1,5 +1,5 @@
 import ipads from '../../data/ipads.js'
-import { toProjectUrl } from '../shared/dom.js'
+import { toProjectUrl } from '../common/dom.js'
 
 const createButtonLink = (ipad, label, className) => {
   const linkEl = document.createElement('a')

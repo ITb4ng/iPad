@@ -1,5 +1,5 @@
 import navigations from '../../data/navigations.js'
-import { isMobileViewport, setExpandedState, toProjectUrl } from '../shared/dom.js'
+import { isMobileViewport, setExpandedState, toProjectUrl } from '../common/dom.js'
 
 const createFooterMap = (navigation, index) => {
   const mapEl = document.createElement('section')
