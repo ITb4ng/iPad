@@ -69,13 +69,13 @@ header ul.menu > li.basket-starter > button {
   filter: brightness(0) saturate(100%);
 }
 header ul.menu > li.apple-logo > a{
-  background-image: url("/images/header_apple.svg");
+  background-image: url("/images/header/header-apple.svg");
 }
 header ul.menu > li.search-starter > button{
-  background-image: url("/images/header_search.svg");
+  background-image: url("/images/header/header-search.svg");
 }
 header ul.menu > li.basket-starter > button{
-  background-image: url("/images/header_bag.svg");
+  background-image: url("/images/header/header-bag.svg");
 }
 header ul.menu > li > :is(a, button):hover{
   opacity: 1;
@@ -229,7 +229,7 @@ header .global-panel.is-animating .header-flyout-panel__inner {
 
 header .header-flyout-panel--search .header-flyout-panel__inner,
 header .global-panel--search .header-flyout-panel__inner {
-  padding-top: 18px;
+  padding-top: 53px;
   padding-bottom: 12px;
 }
 
@@ -301,7 +301,7 @@ header .search .search-icon {
   left: 0;
   width: 30px;
   height: 52px;
-  background: url(/images/header_search.svg) no-repeat center;
+  background: url(/images/header/header-search.svg) no-repeat center;
   filter: brightness(0) saturate(100%);
   opacity: .7;
   pointer-events: none;
@@ -320,7 +320,7 @@ header .search .search-reset {
   border: 0;
   border-radius: 999px;
   transform: translateY(-50%);
-  background: rgba(29, 29, 31, .12) url(/images/header_close.svg) no-repeat center / 12px 12px;
+  background: rgba(29, 29, 31, .12) url(/images/header/header-close.svg) no-repeat center / 12px 12px;
   color: inherit;
   opacity: 0;
   visibility: hidden;
@@ -992,12 +992,12 @@ header:not(.is-scroll-hidden) {
     min-height: var(--mobile-panel-close-size);
     border: 0;
     border-radius: 999px;
-    background: rgba(29, 29, 31, .06) url("/images/header_close.svg") no-repeat center / 12px 12px;
+    background: rgba(29, 29, 31, .06) url("/images/header/header-close.svg") no-repeat center / 12px 12px;
     cursor: pointer;
   }
 
   header :is(.search-wrap, .basket, .clone-menu) .mobile-panel-close {
-    background: rgba(29, 29, 31, .12) url("/images/header_close.svg") no-repeat center / 12px 12px;
+    background: rgba(29, 29, 31, .12) url("/images/header/header-close.svg") no-repeat center / 12px 12px;
     border: 1px solid var(--line-soft);
     box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
     opacity: 0;
@@ -1126,7 +1126,7 @@ header:not(.is-scroll-hidden) {
     top: 50%;
     right: 10px;
     transform: translateY(-50%);
-    background: #86868b url("/images/header_close.svg") no-repeat center / 12px 12px;
+    background: #86868b url("/images/header/header-close.svg") no-repeat center / 12px 12px;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;

@@ -369,24 +369,24 @@ a.link::after{
   width: 100px;
   height: 100px;
   margin: 0 0 -15px -30px;
-  background-image: url("/images/sprite_apps.png");
+  background-image: url("/images/common/sprite-apps.png");
   animation: sprite-icon 3s steps(1) infinite;
 }
 
 
-.info .icon.icon--display      { background-image: url("/images/sprite_display.png"); }
-.info .icon.icon--true-tone    { background-image: url("/images/sprite_true_tone.png"); }
-.info .icon.icon--center-stage { background-image: url("/images/sprite_center_stage.png"); }
-.info .icon.icon--front-camera { background-image: url("/images/sprite_front_camera.png"); }
-.info .icon.icon--back-camera  { background-image: url("/images/sprite_back_camera.png"); }
-.info .icon.icon--scan         { background-image: url("/images/sprite_scan.png"); }
-.info .icon.icon--download     { background-image: url("/images/sprite_download.png"); }
-.info .icon.icon--wifi         { background-image: url("/images/sprite_wifi.png"); }
-.info .icon.icon--lte          { background-image: url("/images/sprite_lte.png"); }
-.info .icon.icon--pencil       { background-image: url("/images/sprite_pencil.png"); }
-.info .icon.icon--keyboard     { background-image: url("/images/sprite_keyboard.png"); }
-.info .icon.icon--notes        { background-image: url("/images/sprite_notes.png"); }
-.info .icon.icon--covers       { background-image: url("/images/sprite_covers.png"); }
+.info .icon.icon--display      { background-image: url("/images/common/sprite-display.png"); }
+.info .icon.icon--true-tone    { background-image: url("/images/common/sprite-true-tone.png"); }
+.info .icon.icon--center-stage { background-image: url("/images/common/sprite-center-stage.png"); }
+.info .icon.icon--front-camera { background-image: url("/images/common/sprite-front-camera.png"); }
+.info .icon.icon--back-camera  { background-image: url("/images/common/sprite-back-camera.png"); }
+.info .icon.icon--scan         { background-image: url("/images/common/sprite-scan.png"); }
+.info .icon.icon--download     { background-image: url("/images/common/sprite-download.png"); }
+.info .icon.icon--wifi         { background-image: url("/images/common/sprite-wifi.png"); }
+.info .icon.icon--lte          { background-image: url("/images/common/sprite-lte.png"); }
+.info .icon.icon--pencil       { background-image: url("/images/common/sprite-pencil.png"); }
+.info .icon.icon--keyboard     { background-image: url("/images/common/sprite-keyboard.png"); }
+.info .icon.icon--notes        { background-image: url("/images/common/sprite-notes.png"); }
+.info .icon.icon--covers       { background-image: url("/images/common/sprite-covers.png"); }
 
 .info p {
   font-size: 21.5px;
@@ -1840,7 +1840,7 @@ sup a:hover {
 .display .notes h2 {
   width: 630px;
   height: 370px;
-  background-image: url("/images/display_headline.png");
+  background-image: url("/images/display/display-headline.png");
   transform: translate(104px , 0);
 }
 .display .notes .figures {
@@ -1851,7 +1851,7 @@ sup a:hover {
 
   width: 145px;
   height: 45px;
-  background-image: url("/images/display_notes_caption.png");
+  background-image: url("/images/display/display-notes-caption.png");
   transform: translate(707px , -16px);
 }
 
@@ -1871,7 +1871,7 @@ sup a:hover {
 .display .shareplay figcaption{
   width: 110px;
   height: 48px;
-  background-image: url("/images/display_shareplay_caption.png");
+  background-image: url("/images/display/display-shareplay-caption.png");
   transform: translate(300px , 658px);
 }
 
@@ -1937,7 +1937,7 @@ sup a:hover {
   .display .notes h2{
     width: 290px;
     height: 308px;
-    background-image: url("/images/display_headline_mobile.png");
+    background-image: url("/images/display/display-headline-mobile.png");
     transform: none;
     margin: 0 auto;
   }
@@ -1990,7 +1990,7 @@ sup a:hover {
 .camera .stage h2{
   width: 600px;
   height: 450px;
-  background-image: url("/images/camera_headline.png");
+  background-image: url("/images/camera/camera-headline.png");
   transform: translate(-25px , 0);
 }
 
@@ -2095,7 +2095,7 @@ sup a:hover {
 .camera .stage figcaption {
   width: 130px;
   height: 110px;
-  background-image: url("/images/camera_hardware_caption.png");
+  background-image: url("/images/camera/camera-hardware-caption.png");
   transform: translate(-136px , 383px);
 }
 
@@ -2112,7 +2112,7 @@ sup a:hover {
 .camera .edit figcaption {
   width: 130px;
   height: 47px;
-  background-image: url("/images/camera_edit_caption.png");
+  background-image: url("/images/camera/camera-edit-caption.png");
   transform: translate(27px , 905px);
 }
 
@@ -2161,7 +2161,7 @@ sup a:hover {
   .camera .stage h2 {
     width: 304px;
     height: 350px;
-    background: url("/images/camera_headline_mobile.png");
+    background: url("/images/camera/camera-headline-mobile.png");
     margin: 0 auto;
     transform: none;
   }
@@ -2221,7 +2221,7 @@ sup a:hover {
 .wireless .facetime h2{
   width: 730px;
   height: 330px;
-  background-image: url("/images/wireless_headline.png");
+  background-image: url("/images/wireless/wireless-headline.png");
 }
 
 .wireless .facetime .figures {
@@ -2235,7 +2235,7 @@ sup a:hover {
 .wireless .facetime figcaption{
   width: 139px;
   height: 46px;
-  background-image: url("/images/wireless_facetime_caption.png");
+  background-image: url("/images/wireless/wireless-facetime-caption.png");
   transform: translate(843px , -49px);
 }
 
@@ -2248,7 +2248,7 @@ sup a:hover {
 .wireless .files figcaption{
   width: 127px;
   height: 46px;
-  background-image: url("/images/wireless_files_caption.png");
+  background-image: url("/images/wireless/wireless-files-caption.png");
   transform: translate(96px , 639px);
 }
 
@@ -2260,7 +2260,7 @@ sup a:hover {
   .wireless .facetime h2 {
     width: 350px;
     height: 200px;
-    background-image: url(/images/wireless_headline_mobile.png);
+    background-image: url(/images/wireless/wireless-headline-mobile.png);
     transform: none;
     margin: 0 auto;
   }
@@ -2299,7 +2299,7 @@ sup a:hover {
 .accessories h2 {
   width: 550px;
   height: 300px;
-  background-image: url("/images/accessories_headline.png");
+  background-image: url("/images/accessories/accessories-headline.png");
   margin: 0 auto;
 }
 
@@ -2315,14 +2315,14 @@ sup a:hover {
 .accessories figcaption .caption-memo {
   width: 169px;
   height: 41px;
-  background-image: url("/images/accessories_caption_memo.png");
+  background-image: url("/images/accessories/accessories-caption-memo.png");
   transform: translate(790px , -52px);
 }
 
 .accessories figcaption .caption-supports {
   width: 200px;
   height: 70px;
-  background-image: url("/images/accessories_caption_supports.png");
+  background-image: url("/images/accessories/accessories-caption-supports.png");
   transform: translate(163px , 821px);
 }
 
@@ -2393,7 +2393,7 @@ sup a:hover {
   width: 530px;
   height: 400px;
   margin: 0 auto;
-  background-image: url("/images/ipados_headline.png");
+  background-image: url("/images/ipados/ipados-headline.png");
 }
 .ipados .infos {
   margin-top: 44px;
@@ -2415,7 +2415,7 @@ sup a:hover {
 .ipados .figure-split-view figcaption{
   width: 163px;
   height: 53px;
-  background-image: url("/images/ipados_split_view_caption.png");
+  background-image: url("/images/ipados/ipados-split-view-caption.png");
   transform: translate(200px , -30px);
 }
 
@@ -2426,7 +2426,7 @@ sup a:hover {
 .ipados .figure-widgets figcaption {
   width: 161px;
   height: 46px;
-  background-image: url("/images/ipados_widgets_caption.png");
+  background-image: url("/images/ipados/ipados-widgets-caption.png");
   transform: translate(257px, 497px);
 }
 
@@ -2436,7 +2436,7 @@ sup a:hover {
 .ipados .figure-quick-note figcaption {
   width: 82px;
   height: 97px;
-  background-image: url("/images/ipados_quick_note_caption.png");
+  background-image: url("/images/ipados/ipados-quick-note-caption.png");
   transform: translate(511px, 470px);
 }
 
@@ -2532,7 +2532,7 @@ sup a:hover {
 .apps h2 {
   width: 500px;
   height: 264px;
-  background-image: url("/images/apps_headline.png");
+  background-image: url("/images/apps/apps-headline.png");
   transform: translate(17px, 0);
 }
 
@@ -2556,7 +2556,7 @@ sup a:hover {
 .apps .figure-masterclass figcaption {
   width: 100px;
   height: 25px;
-  background-image: url("/images/apps_masterclass_caption.png");
+  background-image: url("/images/apps/apps-masterclass-caption.png");
   transform: translate(26px, 690px);
 }
 .apps .figure-adobe figure {
@@ -2565,7 +2565,7 @@ sup a:hover {
 .apps .figure-adobe figcaption {
   width: 105px;
   height: 24px;
-  background-image: url("/images/apps_adobe_caption.png");
+  background-image: url("/images/apps/apps-adobe-caption.png");
   transform: translate(544px, 514px);
 }
 .apps .figure-fantasian figure {
@@ -2574,7 +2574,7 @@ sup a:hover {
 .apps .figure-fantasian figcaption {
   width: 74px;
   height: 22px;
-  background-image: url("/images/apps_fantasian_caption.png");
+  background-image: url("/images/apps/apps-fantasian-caption.png");
   transform: translate(24px, 483px);
 }
 .apps .figure-books figure {
@@ -2583,7 +2583,7 @@ sup a:hover {
 .apps .figure-books figcaption {
   width: 50px;
   height: 27px;
-  background-image: url("/images/apps_books_caption.png");
+  background-image: url("/images/apps/apps-books-caption.png");
   transform: translate(397px, 707px);
 }
 .apps .figure-goodnotes figure {
@@ -2592,7 +2592,7 @@ sup a:hover {
 .apps .figure-goodnotes figcaption {
   width: 99px;
   height: 26px;
-  background-image: url("/images/apps_goodnotes_caption.png");
+  background-image: url("/images/apps/apps-goodnotes-caption.png");
   transform: translate(24px, 690px);
 }
 
@@ -2741,7 +2741,7 @@ sup a:hover {
   margin-left: auto;
   width: 482px;
   height: 237px;
-  background-image: url("/images/privacy_headline.png");
+  background-image: url("/images/privacy/privacy-headline.png");
   position: relative;
   z-index: 1;
   transform: translate(57px , 0);
@@ -2761,14 +2761,14 @@ sup a:hover {
 .privacy figcaption .caption-apple-id{
   width: 170px;
   height: 26px;
-  background-image: url("/images/privacy_caption_apple_id.png");
+  background-image: url("/images/privacy/privacy-caption-apple-id.png");
   transform: translate(195px, -13px);
 }
 
 .privacy figcaption .caption-touch-id{
   width: 150px;
   height: 31px;
-  background-image: url("/images/privacy_caption_touch_id.png");
+  background-image: url("/images/privacy/privacy-caption-touch-id.png");
   transform: translate(533px, 485px);
 }
 
@@ -3192,7 +3192,7 @@ sup a:hover {
 .accessibility h2 {
   width: 384px;
   height: 270px;
-  background-image: url("/images/accessibility_headline.png");
+  background-image: url("/images/accessibility/accessibility-headline.png");
 }
 
 .accessibility .infos {
@@ -3850,7 +3850,7 @@ sup a:hover {
     --caption-item-top: 80%;
     width: 160px;
     height: 44px;
-    background-image: url("/images/accessories_caption_supports_mobile.png");
+    background-image: url("/images/accessories/accessories-caption-supports-mobile.png");
   }
 
   .privacy figcaption .caption-apple-id {

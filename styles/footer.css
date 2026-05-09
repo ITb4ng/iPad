@@ -72,7 +72,7 @@ footer .breadcrumbs a.apple-logo {
   display: block;
   width: 16px;
   height: 16px;
-  background-image: url("/images/path_apple.svg");
+  background-image: url("/images/footer/path-apple.svg");
 }
 footer .breadcrumbs a:hover {
   text-decoration: underline;
@@ -86,7 +86,7 @@ footer .breadcrumbs li::after {
   margin: auto;
   width: 8px;
   height: 18px;
-  background-image: url("/images/path_div.svg");
+  background-image: url("/images/footer/path-div.svg");
 }
 footer .breadcrumbs li:last-child::after {
   display: none;
