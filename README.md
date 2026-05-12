@@ -237,11 +237,30 @@ Apple Korea의 iPad 제품 페이지를 참고해, 정적 퍼블리싱만으로 
 ## 실행 방법
 
 이 프로젝트는 `type="module"` 기반의 정적 페이지입니다.  
-로컬에서는 단순 파일 열기보다 정적 서버 환경에서 확인하는 것을 권장합니다.
+브라우저에서 HTML 파일을 직접 여는 방식보다, 정적 서버 환경에서 확인하는 것을 권장합니다.
 
-예시:
+### VS Code Live Server
 
-    # VS Code Live Server 또는 정적 서버 사용
+VS Code 확장 프로그램인 **Live Server**를 사용해 `index.html`을 실행할 수 있습니다.
+
+    Open with Live Server
+
+### Node.js 정적 서버
+
+Node.js `22.x` 이상 환경에서는 `serve`를 사용해 정적 서버로 실행할 수 있습니다.
+
+    npx serve .
+
+실행 후 터미널에 출력되는 주소로 접속합니다.
+*별도의 포트 지정이 없을 시 
+
+    Local:   http://localhost:3000
+    Network: http://x.x.x.x:3000
+
+`Local` 주소와 `Network` 주소는 사용하는 네트워크 환경에 따라 상이할 수 있습니다.
+
+따라서 모바일 실기기 검증 시에는 터미널에 표시된 `Network` 주소를 기준으로 접속해서 디버깅도 가능합ㄴㅣ다.
+    
 
 ## 문서
 
