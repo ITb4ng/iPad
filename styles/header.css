@@ -10,6 +10,10 @@
 
 header{
   --header-height: var(--header-h);
+  --header-icon-hit-size: 36px;
+  --header-focus-ring: 2px solid #0a84ff;
+  --header-focus-inset-block: 8px;
+  --header-focus-inset-inline: 4px;
   background-color: var(--surface-page);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -27,6 +31,10 @@ header{
 }
 header .inner{
   height: var(--header-height);
+}
+header .global-nav {
+  position: relative;
+  z-index: 10040;
 }
 header ul.menu {
   height: 44px;
@@ -50,44 +58,101 @@ header ul.menu > li > :is(a, button){
   font-size: 11px;
   display: flex;
   align-items: center;
-  color: var(--text);
-  opacity: .8;
+  justify-content: center;
+  color: rgba(29, 29, 29, .72);
   text-decoration: none;
+  position: relative;
+  transition: color .2s ease;
+}
+header ul.menu > li > :is(a, button)::after {
+  content: '';
+  position: absolute;
+  inset: var(--header-focus-inset-block) var(--header-focus-inset-inline);
+  border: var(--header-focus-ring);
+  opacity: 0;
+  pointer-events: none;
 }
 header ul.menu > li > button {
   border: 0;
   background-color: transparent;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
-header ul.menu > li.apple-logo > a,
-header ul.menu > li.search-starter > button,
-header ul.menu > li.basket-starter > button {
-  width: 14px;
-  text-indent: -9999px;
+header ul.menu > li:is(.apple-logo, .search-starter, .basket-starter) {
+  --header-icon-width: 14px;
+  --header-icon-height: 14px;
+}
+header ul.menu > li.apple-logo {
+  --header-icon-width: 14px;
+  --header-icon-height: 17px;
+  --header-icon-image: url("/images/header/header-apple.svg");
+}
+header ul.menu > li.search-starter {
+  --header-icon-width: 15px;
+  --header-icon-height: 15px;
+  --header-icon-image: url("/images/header/header-search.svg");
+}
+header ul.menu > li.basket-starter {
+  --header-icon-width: 13px;
+  --header-icon-height: 15px;
+  --header-icon-image: url("/images/header/header-bag.svg");
+}
+header ul.menu > li:is(.apple-logo, .search-starter, .basket-starter) > :is(a, button) {
+  width: var(--header-icon-hit-size);
+  min-width: var(--header-icon-hit-size);
+  height: var(--header-height);
+  min-height: var(--header-height);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+
+header ul.menu > li:is(.apple-logo, .search-starter, .basket-starter) > :is(a, button)::before {
+  content: '';
+  display: block;
+  width: var(--header-icon-width);
+  height: var(--header-icon-height);
   background-repeat: no-repeat;
-  background-position: center 13px;
+  background-position: center;
+  background-size: 100% 100%;
+  background-image: var(--header-icon-image);
+  pointer-events: none;
   filter: brightness(0) saturate(100%);
 }
-header ul.menu > li.apple-logo > a{
-  background-image: url("/images/header/header-apple.svg");
-}
-header ul.menu > li.search-starter > button{
-  background-image: url("/images/header/header-search.svg");
-}
-header ul.menu > li.basket-starter > button{
-  background-image: url("/images/header/header-bag.svg");
-}
+
 header ul.menu > li > :is(a, button):hover{
+  color: var(--text);
+}
+
+header ul.menu > li > :is(a, button):focus {
+  outline: none;
+}
+
+header ul.menu > li > :is(a, button):focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+
+header ul.menu > li > :is(a, button):focus-visible::after {
+  opacity: 1;
+}
+
+header ul.menu > li > :is(a, button).is-programmatic-focus::after {
   opacity: 1;
 }
 
 /* Desktop flyout panels, basket, and search share the same state classes. */
 html.is-header-flyout-open {
   --global-panel-height: 312px;
-}
-
-header .basket-starter {
-  position: relative;
 }
 
 header .header-flyout {
@@ -112,7 +177,7 @@ header .global-panel {
   background: var(--surface-panel);
   opacity: 0;
   transform: translateY(-14px);
-  z-index: 10030;
+  z-index: 10020;
   transition:
     opacity var(--dur-flyout) var(--ease-flyout),
     transform var(--dur-flyout) var(--ease-flyout),
@@ -163,10 +228,11 @@ header .header-flyout-panel__scroll {
 
 header .header-flyout-panel__inner,
 header .header-flyout-panel__content {
-  width: min(100%, var(--page-w));
+  width: 100%;
+  max-width: var(--page-w);
   min-height: var(--panel-h);
   margin: 0 auto;
-  padding: 24px var(--page-pad) 18px;
+  padding: 24px 24px 18px;
   box-sizing: border-box;
   background: transparent;
 }
@@ -189,7 +255,7 @@ header .global-panel.is-animating .header-flyout-panel__inner {
   clip-path: inset(0 0 100% 0);
   visibility: hidden;
   pointer-events: none;
-  z-index: 10010;
+  z-index: 10000;
   transition:
     opacity var(--dur-curtain) ease,
     clip-path var(--dur-curtain) var(--ease-curtain),
@@ -262,9 +328,9 @@ header .search .textfield:focus-within {
   box-shadow: none;
 }
 
-header .header-search-field.is-keyboard-focus:focus-within,
-header .search .textfield.is-keyboard-focus:focus-within {
-  box-shadow: 0 0 0 2px var(--ring);
+header .header-search-field.is-keyboard-focus,
+header .search .textfield.is-keyboard-focus {
+  box-shadow: inset 0 -2px 0 #0a84ff;
 }
 
 header .header-search-field input,
@@ -279,7 +345,12 @@ header .search input {
   line-height: 1.1;
   font-weight: 600;
   color: var(--text);
-  outline: none;
+}
+
+header .header-search-field input:focus-visible,
+header .search input:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 header .header-search-field input::placeholder,
@@ -334,6 +405,14 @@ header .header-search-field__reset:hover,
 header .search .search-reset:hover {
   background-color: rgba(29, 29, 31, .18);
   box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+}
+
+header .header-search-field__reset:focus-visible,
+header .search .search-reset:focus-visible {
+  outline: none !important;
+  opacity: 1;
+  visibility: visible;
+  box-shadow: var(--focus-ring-shadow), 0 2px 6px rgba(0, 0, 0, .12);
 }
 
 header .header-search-field__reset.is-visible:not([hidden]),
@@ -425,6 +504,16 @@ header .basket ul li a:hover {
 }
 
 @media (min-width: 741px) {
+  header .header-search-field__reset,
+  header .search .search-reset {
+    transition: none;
+  }
+
+  header .header-search-field__reset.is-visible:not([hidden]),
+  header .search .search-reset.is-visible:not([hidden]) {
+    opacity: 1;
+  }
+
   header .header-flyout-panel--basket.is-open,
   header .header-flyout-panel--basket.is-animating,
   header .global-panel--basket.is-open,
@@ -591,7 +680,7 @@ header .basket ul li a.basket-link--signin::before {
     width: min(100%, var(--page-w));
     max-width: none;
     min-height: var(--basket-panel-h);
-    padding: 24px var(--page-pad) 20px;
+    padding: 53px var(--page-pad) 20px;
     background: transparent;
   }
 
@@ -693,11 +782,45 @@ header:not(.is-scroll-hidden) {
   header .inner{
     padding: 0 10px;
   }
+
+  header{
+    --header-panel-max-w: 840px;
+  }
+
+  header .header-flyout-panel__scroll {
+    scrollbar-gutter: stable both-edges;
+  }
+
+  header .header-flyout-panel__inner,
+  header .header-flyout-panel__content {
+    width: 100%;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  header .header-flyout-panel--search .search,
+  header .global-panel--search .search,
+  header .header-flyout-panel--basket .basket-panel-inner,
+  header .global-panel--basket .basket-panel-inner {
+    width: 100%;
+    max-width: var(--header-panel-max-w);
+    margin: 0 auto;
+  }
+
+  header .header-flyout-panel--search .header-flyout-panel__inner,
+  header .global-panel--search .header-flyout-panel__inner {
+    padding-top: 40px;
+    padding-bottom: 18px;
+  }
+
+  header .header-search-results,
+  header .search .autocompletes {
+    max-width: none;
+  }
 }
 
 @media (max-width: 740px) {
   header {
-    --mobile-header-icon-size: 18px;
     --mobile-header-action-size: 40px;
     --mobile-header-action-gap: 6px;
     --mobile-header-inline-padding: 14px;
@@ -708,7 +831,7 @@ header:not(.is-scroll-hidden) {
     --mobile-panel-top-padding: 20px;
     --mobile-panel-bottom-padding: 44px;
     --mobile-panel-close-size: 40px;
-    --mobile-overlay-z-index: 10020;
+    --mobile-overlay-z-index: 10060;
     --mobile-menu-curtain-duration: 160ms;
     --mobile-menu-panel-duration: 260ms;
     --mobile-menu-panel-easing: cubic-bezier(.22, 1, .36, 1);
@@ -761,6 +884,8 @@ header:not(.is-scroll-hidden) {
   header ul.menu > li.search-starter,
   header ul.menu > li.basket-starter {
     display: flex;
+    position: relative;
+    z-index: 30;
   }
 
   header ul.menu > li.apple-logo {
@@ -780,13 +905,6 @@ header:not(.is-scroll-hidden) {
     order: 4;
   }
 
-  header ul.menu > li.search-starter,
-  header ul.menu > li.basket-starter,
-  header ul.menu > li.menu-starter {
-    position: relative;
-    z-index: 30;
-  }
-
   header ul.menu > li.apple-logo > a,
   header ul.menu > li.search-starter > button,
   header ul.menu > li.basket-starter > button,
@@ -800,15 +918,7 @@ header:not(.is-scroll-hidden) {
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    border-radius: 999px;
-  }
-
-  header ul.menu > li.apple-logo > a,
-  header ul.menu > li.search-starter > button,
-  header ul.menu > li.basket-starter > button {
-    background-size: var(--mobile-header-icon-size) auto;
-    background-position: center;
-    filter: brightness(0) saturate(100%);
+    border-radius: 0;
   }
 
   header ul.menu > li.menu-starter span {
@@ -830,10 +940,6 @@ header:not(.is-scroll-hidden) {
   header ul.menu > li > :is(a, button) {
     min-height: var(--mobile-header-action-size);
     padding: 0;
-  }
-
-  header ul.menu > li > :is(a, button):focus-visible {
-    outline-offset: 3px;
   }
 
   header .search-wrap,
@@ -860,6 +966,10 @@ header:not(.is-scroll-hidden) {
     transition:
       opacity var(--dur-mobile-fade) ease,
       visibility 0s linear var(--dur-mobile-fade);
+  }
+
+  header:is(.menuing, .searching, .basketing, .is-mobile-menu-closing) .global-nav {
+    z-index: 0;
   }
 
   html.fixed,
@@ -1037,13 +1147,9 @@ header:not(.is-scroll-hidden) {
     background-color: rgba(29, 29, 31, .1);
   }
 
-  header .global-mobile-panel__close:focus-visible {
-    outline-offset: 3px;
-  }
-
-  header .global-mobile-panel__close.is-programmatic-focus {
-    outline: var(--ring-w) solid var(--ring);
-    outline-offset: 3px;
+  header :is(.search-wrap, .basket, .clone-menu) .mobile-panel-close.is-programmatic-focus,
+  header :is(.search-wrap, .basket, .clone-menu) .mobile-panel-close:focus-visible {
+    box-shadow: var(--focus-ring-shadow);
   }
 
   header .global-mobile-panel__body {

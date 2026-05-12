@@ -124,11 +124,6 @@ main {
     opacity 200ms ease;
 }
 
-.error-page-body .error-page__button:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
-}
-
 .error-page-body .error-page__button--primary {
   background-color: #0071e3;
   border-color: #0071e3;

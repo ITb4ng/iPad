@@ -42,8 +42,16 @@ footer .warning {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
+footer .warning :is(ol, ul) {
+  margin: 0;
+}
+footer .warning ul {
+  list-style: none;
+  padding-left: 0;
+}
 footer .warning ol {
   list-style: decimal;
+  list-style-position: inside;
   padding-left: 16px;
 }
 footer .warning li {
@@ -51,6 +59,39 @@ footer .warning li {
   font-size: 11px;
   line-height: 1.5;
   color: var(--text-muted);
+  scroll-margin-top: calc(var(--header-h) + var(--nav-h) + 28px);
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease,
+    color 220ms ease,
+    opacity 220ms ease;
+}
+footer .warning .warning-list + .warning-list {
+  margin-top: 14px;
+}
+footer .warning .warning-list--feature li {
+  margin-bottom: 12px;
+}
+footer .warning .warning-list--supporting li:last-child,
+footer .warning .warning-list--feature li:last-child,
+footer .warning .warning-list--numbered li:last-child {
+  margin-bottom: 0;
+}
+footer .warning a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+footer .warning li:focus {
+  outline: none;
+}
+footer .warning li.is-footnote-highlight {
+  margin-left: -8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background-color: rgba(0, 113, 227, .08);
+  color: var(--text);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, .22);
 }
 /* Footer / Breadcrumbs */
 footer .breadcrumbs {

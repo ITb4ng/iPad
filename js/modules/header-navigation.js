@@ -44,6 +44,7 @@ export const initHeaderAndNavigation = () => {
   const cloneMenuLinkEls = cloneMenuEl ? [...cloneMenuEl.querySelectorAll('a')] : []
   const searchWrapEl = headerEl.querySelector('.search-wrap')
   const searchPanelEl = searchWrapEl?.querySelector('.search')
+  const searchFormEl = searchWrapEl?.querySelector('.header-search-form')
   const searchStarterEl = headerEl.querySelector('.search-starter > button')
   const searchMobileCloseEl = searchWrapEl?.querySelector('[data-mobile-panel-close="search"]')
   const searchResetEl = searchWrapEl?.querySelector('.search-reset')
@@ -58,12 +59,14 @@ export const initHeaderAndNavigation = () => {
   const panelTriggerEls = [...headerEl.querySelectorAll('[data-panel-trigger]')]
   const globalMenuListEl = headerEl.querySelector('ul.menu')
   const menuStarterEl = headerEl.querySelector('.menu-starter > button')
+  const mobilePanelTriggerEls = [menuStarterEl, searchStarterEl, basketStarterEl].filter(Boolean)
   const searchTextFieldEl = headerEl.querySelector('.header-search-field')
   const searchCancelEl = headerEl.querySelector('.search-canceler')
   const navMenuToggleEl = navEl.querySelector('.menu-toggler')
   const navMenuShadowEl = navEl.querySelector('.shadow')
   const navMenuEl = navEl.querySelector('#product-nav-menu')
   const navMenuLinkEls = navMenuEl ? [...navMenuEl.querySelectorAll('a[href]')] : []
+  const navBuyButtonEl = navEl.querySelector('a.btn[href], .btn[href], a.btn')
   const skipLinkEl = document.querySelector('.skip-link')
   const mainEl = document.querySelector('main')
   const footerEl = document.querySelector('footer')
@@ -100,6 +103,7 @@ export const initHeaderAndNavigation = () => {
   let pendingScrollDelta = 0
   let isHeaderRevealTicking = false
   let isHeaderVisible = true
+  let isMobileSkipLinkHeaderSuppressed = false
   let lastScrollDirection = 0
   let scrollIdleTimeoutId = 0
   let mobilePanelFocusTimeoutId = 0
@@ -339,14 +343,28 @@ export const initHeaderAndNavigation = () => {
     })
   }
 
+  const clearProgrammaticTriggerFocusState = () => {
+    mobilePanelTriggerEls.forEach((element) => {
+      element.classList.remove('is-programmatic-focus')
+    })
+  }
+
   const applyProgrammaticCloseButtonFocusState = (element) => {
-    // Do not keep a fake focus ring after the user tabs away.
-    // The real focus outline should come from :focus / :focus-visible only.
     if (!(element instanceof HTMLElement)) {
       return
     }
 
     clearProgrammaticCloseButtonFocusState()
+    element.classList.add('is-programmatic-focus')
+  }
+
+  const applyProgrammaticTriggerFocusState = (element) => {
+    if (!(element instanceof HTMLElement)) {
+      return
+    }
+
+    clearProgrammaticTriggerFocusState()
+    element.classList.add('is-programmatic-focus')
   }
 
   const canFocusMobileCloseButton = (type, element) => {
@@ -541,7 +559,7 @@ export const initHeaderAndNavigation = () => {
     pendingFocusReturnTimeoutId = 0
   }
 
-  const queueFocusReturn = (targetEl, { panelType = null, delay = 0 } = {}) => {
+  const queueFocusReturn = (targetEl, { panelType = null, delay = 0, applyVisibleState = false } = {}) => {
     clearPendingFocusReturn()
 
     if (!(targetEl instanceof HTMLElement)) {
@@ -564,6 +582,10 @@ export const initHeaderAndNavigation = () => {
 
       if (shouldRestore && isFocusableElementVisible(targetEl)) {
         targetEl.focus({ preventScroll: true })
+
+        if (document.activeElement === targetEl && applyVisibleState) {
+          applyProgrammaticTriggerFocusState(targetEl)
+        }
       }
 
       pendingFocusReturnTimeoutId = 0
@@ -734,6 +756,22 @@ export const initHeaderAndNavigation = () => {
   const isKeyboardHeaderMenuSession = () =>
     headerMenuOpenMode === 'keyboard' && headerEl.classList.contains('menuing')
 
+  const isKeyboardMobileFlyoutSession = (type) => {
+    if (type === 'menu') {
+      return isKeyboardHeaderMenuSession()
+    }
+
+    if (type === 'search') {
+      return isKeyboardSearchSession()
+    }
+
+    if (type === 'basket') {
+      return isKeyboardBasketSession()
+    }
+
+    return false
+  }
+
   const isPointerSearchSession = () =>
     searchOpenMode === 'pointer' && headerEl.classList.contains('searching')
 
@@ -766,10 +804,20 @@ export const initHeaderAndNavigation = () => {
     headerEl.classList.contains('searching--mobile') ||
     navEl.classList.contains('menuing')
 
+  const syncHeaderTabIsolation = ({ visible = isHeaderVisible } = {}) => {
+    const shouldKeepHeaderInteractive = visible || isHeaderOverlayActive()
+
+    if (globalMenuListEl instanceof HTMLElement) {
+      globalMenuListEl.inert = !shouldKeepHeaderInteractive
+      setTemporaryAriaHidden(globalMenuListEl, !shouldKeepHeaderInteractive)
+    }
+  }
+
   const setHeaderVisibility = (visible) => {
     headerEl.classList.toggle('is-scroll-hidden', !visible)
     navEl.classList.toggle('is-offset-for-header', visible)
     isHeaderVisible = visible
+    syncHeaderTabIsolation({ visible })
   }
 
   const resetHeaderRevealState = () => {
@@ -800,6 +848,15 @@ export const initHeaderAndNavigation = () => {
     lastScrollDirection = 0
     clearScrollIdleTimer()
 
+    if (isMobileViewport() && isMobileSkipLinkHeaderSuppressed) {
+      if (currentScrollY <= 0) {
+        isMobileSkipLinkHeaderSuppressed = false
+      } else if (!isHeaderOverlayActive() && !rootEl.classList.contains('fixed')) {
+        setHeaderVisibility(false)
+        return
+      }
+    }
+
     if (
       currentScrollY <= activationOffset ||
       isHeaderOverlayActive() ||
@@ -818,6 +875,19 @@ export const initHeaderAndNavigation = () => {
       (headerEl.offsetHeight || 0) + 8,
       HEADER_REVEAL_CONFIG.activationOffset
     )
+
+    if (isMobileViewport() && isMobileSkipLinkHeaderSuppressed) {
+      if (currentScrollY <= 0) {
+        isMobileSkipLinkHeaderSuppressed = false
+      } else if (!forceVisible && !isHeaderOverlayActive() && !rootEl.classList.contains('fixed')) {
+        setHeaderVisibility(false)
+        lastScrollY = currentScrollY
+        pendingScrollDelta = 0
+        lastScrollDirection = 0
+        clearScrollIdleTimer()
+        return
+      }
+    }
 
     if (currentScrollY <= activationOffset) {
       resetHeaderRevealState()
@@ -875,6 +945,54 @@ export const initHeaderAndNavigation = () => {
       revealHeader()
       pendingScrollDelta = 0
     }
+  }
+
+  const focusMainContentTarget = () => {
+    if (!(mainEl instanceof HTMLElement)) {
+      return
+    }
+
+    const needsTemporaryTabIndex = !mainEl.hasAttribute('tabindex')
+
+    if (needsTemporaryTabIndex) {
+      mainEl.setAttribute('tabindex', '-1')
+    }
+
+    mainEl.focus({ preventScroll: true })
+
+    if (!needsTemporaryTabIndex) {
+      return
+    }
+
+    mainEl.addEventListener(
+      'blur',
+      () => {
+        if (mainEl.getAttribute('tabindex') === '-1') {
+          mainEl.removeAttribute('tabindex')
+        }
+      },
+      { once: true }
+    )
+  }
+
+  const syncSkipLinkNavigation = () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        focusMainContentTarget()
+
+        if (isMobileViewport()) {
+          isMobileSkipLinkHeaderSuppressed = true
+          setHeaderVisibility(false)
+          lastScrollY = getScrollY()
+          pendingScrollDelta = 0
+          lastScrollDirection = 0
+          clearScrollIdleTimer()
+          return
+        }
+
+        initializeHeaderRevealState()
+      })
+    })
   }
 
   const queueHeaderRevealSync = (options) => {
@@ -995,7 +1113,9 @@ export const initHeaderAndNavigation = () => {
       }
     }
 
-    if (isMobileViewport() && mobileFlyoutType) {
+    syncHeaderTabIsolation()
+
+    if (isMobileViewport() && mobileFlyoutType && isKeyboardMobileFlyoutSession(mobileFlyoutType)) {
       if (lastInitialFocusedMobileFlyoutType !== mobileFlyoutType) {
         lastInitialFocusedMobileFlyoutType = mobileFlyoutType
         queueMobilePanelInitialFocus(mobileFlyoutType)
@@ -1072,6 +1192,7 @@ export const initHeaderAndNavigation = () => {
     const isMobileMenu = isMobileViewport()
     const isMenuOpen = headerEl.classList.contains('menuing')
     const restoreTargetEl = restoreFocus ? getMobilePanelTrigger('menu') : null
+    const shouldShowReturnFocus = restoreFocus && headerMenuOpenMode === 'keyboard'
 
     if (isMobileMenu && isMenuOpen) {
       clearMobileMenuCloseTimer()
@@ -1088,7 +1209,7 @@ export const initHeaderAndNavigation = () => {
         headerEl.classList.remove('is-mobile-menu-closing')
         cloneMenuEl?.classList.remove('is-closing')
         syncScrollLock()
-        queueFocusReturn(restoreTargetEl, { panelType: 'menu' })
+        queueFocusReturn(restoreTargetEl, { panelType: 'menu', applyVisibleState: shouldShowReturnFocus })
         mobileMenuCloseTimeoutId = 0
       }, prefersReducedMotion() ? 20 : MOBILE_MENU_CONFIG.closeCleanupDuration)
     } else {
@@ -1099,7 +1220,7 @@ export const initHeaderAndNavigation = () => {
       cloneMenuEl?.classList.remove('is-open', 'is-closing')
       setHeaderMenuOpenMode()
       syncScrollLock()
-      queueFocusReturn(restoreTargetEl, { panelType: 'menu' })
+      queueFocusReturn(restoreTargetEl, { panelType: 'menu', applyVisibleState: shouldShowReturnFocus })
     }
   }
 
@@ -1164,6 +1285,12 @@ export const initHeaderAndNavigation = () => {
     const closingType = activePanelType
     const closingPanelEl = getPanel(closingType)
     const restoreTargetEl = restoreFocus ? lastPanelTriggerEl : null
+    const shouldShowReturnFocus =
+      restoreFocus &&
+      (
+        (closingType === 'search' && searchOpenMode === 'keyboard') ||
+        (closingType === 'basket' && basketOpenMode === 'keyboard')
+      )
 
     moveFocusOutOfClosingFlyout(closingType, closingPanelEl, restoreTargetEl)
 
@@ -1216,7 +1343,8 @@ export const initHeaderAndNavigation = () => {
 
     queueFocusReturn(restoreTargetEl, {
       panelType: closingType,
-      delay: getPanelCloseCleanupDuration()
+      delay: getPanelCloseCleanupDuration(),
+      applyVisibleState: shouldShowReturnFocus
     })
     lastPanelTriggerEl = null
   }
@@ -1318,6 +1446,10 @@ export const initHeaderAndNavigation = () => {
     armPanelHoverClose()
 
     if (isMobilePanelType(type)) {
+      if (mode === 'keyboard') {
+        queueMobilePanelInitialFocus(type)
+      }
+
       return
     }
 
@@ -1458,6 +1590,10 @@ export const initHeaderAndNavigation = () => {
 
     if (isMobileViewport() && headerEl.classList.contains('menuing')) {
       syncInteractiveStates()
+
+      if (mode === 'keyboard') {
+        queueMobilePanelInitialFocus('menu')
+      }
     }
   }
 
@@ -1474,7 +1610,7 @@ export const initHeaderAndNavigation = () => {
       return
     }
 
-    if (activePanelType !== 'search' || !isKeyboardSearchSession()) {
+    if (activePanelType !== 'search') {
       return
     }
 
@@ -1516,7 +1652,7 @@ export const initHeaderAndNavigation = () => {
       return
     }
 
-    if (activePanelType !== 'basket' || !isKeyboardBasketSession()) {
+    if (activePanelType !== 'basket') {
       return
     }
 
@@ -1537,6 +1673,26 @@ export const initHeaderAndNavigation = () => {
 
       debugClose('focusout', { panel: 'basket' })
       closeGlobalPanel({ reason: 'focusout' })
+    })
+  }
+
+  const handleProductNavFocusOut = (event) => {
+    if (!isMobileViewport() || !navEl.classList.contains('menuing')) {
+      return
+    }
+
+    const nextFocusedElement = event.relatedTarget
+
+    if (nextFocusedElement && navEl.contains(nextFocusedElement)) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      if (navEl.contains(document.activeElement)) {
+        return
+      }
+
+      hideNavMenu()
     })
   }
 
@@ -1646,6 +1802,10 @@ export const initHeaderAndNavigation = () => {
     clearSearchKeyboardFocusState()
   })
 
+  searchFormEl?.addEventListener('submit', (event) => {
+    event.preventDefault()
+  })
+
   searchResetEl?.addEventListener('click', (event) => {
     event.stopPropagation()
 
@@ -1721,10 +1881,46 @@ export const initHeaderAndNavigation = () => {
     })
   })
 
+  document.addEventListener('keydown', (event) => {
+    const mobileFlyoutType = getActiveMobileFlyoutType()
+
+    if (!mobileFlyoutType || event.key !== 'Tab') {
+      return
+    }
+
+    const panelEl = getMobileFlyoutContainer(mobileFlyoutType)
+
+    if (!(panelEl instanceof HTMLElement) || panelEl.contains(document.activeElement)) {
+      return
+    }
+
+    const focusableEls = getMobilePanelFocusables(mobileFlyoutType)
+    const targetEl = event.shiftKey
+      ? focusableEls[focusableEls.length - 1]
+      : focusableEls[0]
+
+    if (!(targetEl instanceof HTMLElement)) {
+      return
+    }
+
+    event.preventDefault()
+    targetEl.focus()
+
+    if (targetEl === getMobileCloseButton(mobileFlyoutType)) {
+      applyProgrammaticCloseButtonFocusState(targetEl)
+    } else {
+      clearProgrammaticCloseButtonFocusState()
+    }
+  })
+
   document.addEventListener('focusin', (event) => {
     const mobileFlyoutType = getActiveMobileFlyoutType()
 
     if (!mobileFlyoutType) {
+      return
+    }
+
+    if (!isKeyboardMobileFlyoutSession(mobileFlyoutType)) {
       return
     }
 
@@ -1746,7 +1942,7 @@ export const initHeaderAndNavigation = () => {
       }
 
       if (
-        !isKeyboardSearchSession() ||
+        activePanelType !== 'search' ||
         !isLastQuickLink ||
         event.key !== 'Tab' ||
         event.shiftKey
@@ -1775,7 +1971,7 @@ export const initHeaderAndNavigation = () => {
       }
 
       if (
-        !isKeyboardBasketSession() ||
+        activePanelType !== 'basket' ||
         !isLastBasketLink ||
         event.key !== 'Tab' ||
         event.shiftKey
@@ -1869,6 +2065,12 @@ export const initHeaderAndNavigation = () => {
     })
   })
 
+  mobilePanelTriggerEls.forEach((element) => {
+    element.addEventListener('blur', () => {
+      element.classList.remove('is-programmatic-focus')
+    })
+  })
+
   menuStarterEl?.addEventListener('click', (event) => {
     event.stopPropagation()
     toggleHeaderMenu({ mode: isKeyboardInteraction ? 'keyboard' : 'pointer' })
@@ -1897,6 +2099,22 @@ export const initHeaderAndNavigation = () => {
   navEl.addEventListener('click', (event) => {
     event.stopPropagation()
   })
+  navEl.addEventListener('focusout', handleProductNavFocusOut)
+
+  navBuyButtonEl?.addEventListener('keydown', (event) => {
+    if (!isMobileViewport() || !navEl.classList.contains('menuing') || event.key !== 'Tab' || event.shiftKey) {
+      return
+    }
+
+    const nextFocusableEl = getNextFocusableElement(navBuyButtonEl)
+
+    event.preventDefault()
+    hideNavMenu()
+
+    window.requestAnimationFrame(() => {
+      nextFocusableEl?.focus()
+    })
+  })
 
   navMenuLinkEls.forEach((element) => {
     element.addEventListener('click', () => {
@@ -1907,6 +2125,7 @@ export const initHeaderAndNavigation = () => {
   })
 
   navMenuShadowEl?.addEventListener('click', hideNavMenu)
+  skipLinkEl?.addEventListener('click', syncSkipLinkNavigation)
 
   window.addEventListener('click', () => {
     if (activePanelType || getActiveMobileFlyoutType() || headerEl.classList.contains('is-mobile-menu-closing')) {
@@ -1939,6 +2158,7 @@ export const initHeaderAndNavigation = () => {
     if (isMobileViewport()) {
       headerEl.classList.remove('searching')
     } else {
+      isMobileSkipLinkHeaderSuppressed = false
       closeHeaderMenu()
       closeMobileSearch()
       hideNavMenu()
