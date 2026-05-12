@@ -92,6 +92,10 @@ html {
   --color-section: var(--surface-section);
   --color-shadow: var(--shadow-veil);
   --focus-ring-shadow: 0 0 0 2px #0a84ff;
+  --scrollbar-thumb: rgba(120, 120, 128, 0.55);
+  --scrollbar-thumb-hover: rgba(120, 120, 128, 0.72);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
   background: var(--surface-section);
 }
 
@@ -145,8 +149,29 @@ body {
   font-family: "Roboto", "Noto Sans KR", sans-serif;
   color: var(--text);
   overflow-x: hidden;
+  overflow-y: auto;
   padding-top: var(--header-h);
   background: linear-gradient(to bottom, #fff 0, #fff calc(100% - 640px), rgba(255, 255, 255, 0) 100%);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: content-box;
 }
 
 .sr-only,
