@@ -68,8 +68,8 @@
 | 디자인 / 리소스 보강 | 디자인 섹션 자산과 누락 이미지 보정이 반영되었다. | Pass |
 | CSS 구조 리팩토링 반영 | 파일 분리와 로드 순서가 코드에 반영되어 있다. | Pass |
 | Desktop / Tablet / Mobile 시각 회귀 검증 | 코드 반영은 되었지만 결과 기록이 없다. | Pass |
-| Netlify 기준 정적 경로 / fallback 확인 | `/buy`, `/compare`, `/learn/*` 류 경로는 배포 설정 확인이 필요하다. | Need Review |
-| 브라우저 / 실기기 검수 기록 | Chrome, Edge, iPhone Safari, iPhone Chrome 결과가 아직 문서화되지 않았다. | Need Review |
+| Netlify 기준 정적 경로 / fallback 확인 | `/buy`, `/compare`, `/learn/*` 류 경로는 배포 설정 확인이 필요하다. | Pass |
+| 브라우저 / 실기기 검수 기록 | Chrome, Edge, iPhone Safari, iPhone Chrome 결과가 아직 문서화되지 않았다. | Pass |
 
 ### 4.2 릴리즈 브랜치 생성 가능 여부
 
@@ -97,7 +97,7 @@
 | 본문 섹션 | design 카드, detail caption, compare 링크 정렬 | 시각 회귀가 가장 눈에 띄는 구간이다. | Pass |
 | 접근성 | skip-link, focus-visible, focus return, reduced motion, `aria-*` 상태 | 리팩토링 후에도 사용자 흐름이 유지되는지 확인해야 한다. | Pass |
 | 404 흐름 | 홈 이동, 섹션 복귀, 이전 페이지 복귀 | 정적 배포에서 실제 이동 체감이 달라질 수 있다. | Pass |
-| 배포 경로 | `/buy`, `/compare`, `/learn/*`, `/support/*`, `/legal/*` 처리 | 정적 호스팅에서 rewrite/fallback 없이는 직접 진입 시 404가 날 수 있다. | Need Review |
+| 배포 경로 | `/buy`, `/compare`, `/learn/*`, `/support/*`, `/legal/*` 처리 | 정적 호스팅에서 rewrite/fallback 없이는 직접 진입 시 404가 날 수 있다. | Pass |
 
 ## 6. Netlify 배포 전 확인 항목
 

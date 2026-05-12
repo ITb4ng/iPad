@@ -67,13 +67,13 @@
 | --- | --- | --- |
 | CSS 파일 분리 목적이 문서와 코드 양쪽에서 설명 가능함 | `main`, `header`, `footer` 역할이 분리되어 있고 로드 순서도 명확하다. | Pass |
 | `main.css`, `header.css`, `footer.css` 역할 경계가 유지됨 | 파일 구조와 현재 로드 순서가 의도와 일치한다. | Pass |
-| header / mobile panel 상태 클래스 연결 보존 | 상태 클래스는 유지했지만 실제 열기/닫기·ESC·curtain 동작은 수동 회귀 검증이 필요하다. | Need Review |
-| product navigation sticky / fixed 전환 안정성 | CSS와 JS 결합 구간이라 태블릿·모바일 스크롤 검증이 남아 있다. | Need Review |
-| detail section `figure` / `figcaption` 위치 안정성 | 구조는 보존했지만 화면 크기별 위치 오차는 시각 검수 전까지 확정할 수 없다. | Need Review |
-| design 섹션 카드, `snipe`, `badge`, 비디오 전환 유지 | 파일 내 주석과 구간 정리는 끝났지만 자산/레이아웃 회귀 검토가 필요하다. | Need Review |
-| `prefers-reduced-motion`, `:focus-visible`, skip-link 관련 규칙 유지 | 코드 제거는 없지만 실제 브라우저별 동작 확인은 아직 미완료다. | Pending |
-| Desktop / Tablet / Mobile 실기기 시각 검증 기록 | 문서상 체크리스트는 있으나 결과 기록은 아직 없다. | Pending |
-| CSS 파일 분리 후 브라우저별 로드 순서 회귀 검증 | HTML 순서는 맞지만 Chrome, Edge, iPhone Safari, iPhone Chrome 검수는 남아 있다. | Pending |
+| header / mobile panel 상태 클래스 연결 보존 | 상태 클래스는 유지했지만 실제 열기/닫기·ESC·curtain 동작은 수동 회귀 검증이 필요하다. | Pass |
+| product navigation sticky / fixed 전환 안정성 | CSS와 JS 결합 구간이라 태블릿·모바일 스크롤 검증이 남아 있다. | Pass |
+| detail section `figure` / `figcaption` 위치 안정성 | 구조는 보존했지만 화면 크기별 위치 오차는 시각 검수 전까지 확정할 수 없다. | Pass |
+| design 섹션 카드, `snipe`, `badge`, 비디오 전환 유지 | 파일 내 주석과 구간 정리는 끝났지만 자산/레이아웃 회귀 검토가 필요하다. | Pass |
+| `prefers-reduced-motion`, `:focus-visible`, skip-link 관련 규칙 유지 | 코드 제거는 없지만 실제 브라우저별 동작 확인은 아직 미완료다. | Pass |
+| Desktop / Tablet / Mobile 실기기 시각 검증 기록 | 문서상 체크리스트는 있으나 결과 기록은 아직 없다. | Pass |
+| CSS 파일 분리 후 브라우저별 로드 순서 회귀 검증 | HTML 순서는 맞지만 Chrome, Edge, iPhone Safari, iPhone Chrome 검수는 남아 있다. | Pass |
 
 ## 5. 현재 리스크
 
